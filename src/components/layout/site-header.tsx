@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/petitions", label: "Signals" },
+  { to: "/petitions", label: "Browse" },
   { to: "/create", label: "Start a signal" },
   { to: "/leaders", label: "For leaders" },
   { to: "/account", label: "Account" },

@@ -4,6 +4,7 @@ import { SEED_LEADERS, SEED_PETITIONS } from "./seed";
 import type {
   Intensity,
   Leader,
+  LeaderNotice,
   LeaderResponse,
   Petition,
   PulsePerson,
@@ -22,6 +23,7 @@ export interface PulseStore {
   petitions: Petition[];
   signatures: Signature[];
   responses: LeaderResponse[];
+  notices: LeaderNotice[];
   persistence: PersistenceMode;
   sharedReady: boolean;
   person: PulsePerson | null;
@@ -41,6 +43,7 @@ export interface PulseStore {
     petitions: Petition[];
     signatures: Signature[];
     responses: LeaderResponse[];
+    notices?: LeaderNotice[];
     persistence: PersistenceMode;
   }) => void;
   signPetition: (input: {
@@ -61,6 +64,9 @@ export interface PulseStore {
     category: string;
     leaderId: string;
     createdByName: string;
+    whyThisSeat?: string;
+    localeLabel?: string;
+    parentId?: string;
   }) => Promise<{ ok: true; petition: Petition } | { ok: false; error: string }>;
   respondAsLeader: (input: {
     petitionId: string;
@@ -85,6 +91,7 @@ export const usePulseStore = create<PulseStore>()(
       petitions: SEED_PETITIONS,
       signatures: [],
       responses: [],
+      notices: [],
       persistence: "unknown",
       sharedReady: false,
       person: null,
@@ -111,6 +118,7 @@ export const usePulseStore = create<PulseStore>()(
           petitions: input.petitions.length ? input.petitions : SEED_PETITIONS,
           signatures: input.signatures,
           responses: input.responses,
+          notices: input.notices ?? [],
           persistence: input.persistence,
           sharedReady: true,
         });
@@ -215,7 +223,13 @@ export const usePulseStore = create<PulseStore>()(
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...input, slug }),
+            body: JSON.stringify({
+              ...input,
+              slug,
+              whyThisSeat: input.whyThisSeat,
+              localeLabel: input.localeLabel,
+              parentId: input.parentId,
+            }),
           });
           const data = (await res.json()) as {
             ok: boolean;
@@ -251,6 +265,9 @@ export const usePulseStore = create<PulseStore>()(
           createdAt: new Date().toISOString(),
           createdByName: input.createdByName.trim() || "Neighbor",
           hostedNotEndorsed: true,
+          whyThisSeat: input.whyThisSeat,
+          localeLabel: input.localeLabel,
+          parentId: input.parentId,
         };
         set((s) => ({ petitions: [petition, ...s.petitions] }));
         return { ok: true, petition };
@@ -390,6 +407,7 @@ export async function syncSharedPulse() {
       petitions?: Petition[];
       signatures?: Signature[];
       responses?: LeaderResponse[];
+      notices?: LeaderNotice[];
     };
     if (data.persistence === "lpl" && data.signatures) {
       usePulseStore.getState().applyShared({
@@ -397,6 +415,7 @@ export async function syncSharedPulse() {
         petitions: data.petitions ?? SEED_PETITIONS,
         signatures: data.signatures,
         responses: data.responses ?? [],
+        notices: data.notices ?? [],
         persistence: "lpl",
       });
     } else {

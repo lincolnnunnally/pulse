@@ -8,6 +8,7 @@ import {
 import type {
   Intensity,
   Leader,
+  LeaderNotice,
   LeaderResponse,
   Petition,
   PulsePerson,
@@ -20,6 +21,7 @@ type SharedSnapshot = {
   petitions: Petition[];
   signatures: Signature[];
   responses: LeaderResponse[];
+  notices: LeaderNotice[];
   error?: string;
 };
 
@@ -82,6 +84,8 @@ function mapLeader(row: Record<string, unknown>): Leader {
     kind: row.kind as Leader["kind"],
     jurisdiction: String(row.jurisdiction),
     contactNote: row.contact_note ? String(row.contact_note) : undefined,
+    whyTheyAct: row.why_they_act ? String(row.why_they_act) : undefined,
+    notifyEmail: row.notify_email ? String(row.notify_email) : undefined,
   };
 }
 
@@ -100,6 +104,24 @@ function mapPetition(row: Record<string, unknown>): Petition {
     createdAt: String(row.created_at),
     createdByName: String(row.created_by_name || "Neighbor"),
     hostedNotEndorsed: true,
+    parentId: row.parent_id ? String(row.parent_id) : undefined,
+    whyThisSeat: row.why_this_seat ? String(row.why_this_seat) : undefined,
+    localeLabel: row.locale_label ? String(row.locale_label) : undefined,
+  };
+}
+
+function mapNotice(row: Record<string, unknown>): LeaderNotice {
+  return {
+    id: String(row.id),
+    petitionId: String(row.petition_id),
+    leaderId: String(row.leader_id),
+    channel: (String(row.channel || "in_app") as LeaderNotice["channel"]) || "in_app",
+    status: (String(row.status || "recorded") as LeaderNotice["status"]) || "recorded",
+    subject: String(row.subject || ""),
+    body: String(row.body || ""),
+    sentByName: String(row.sent_by_name || "Neighbor"),
+    sentByEmail: String(row.sent_by_email || ""),
+    createdAt: String(row.created_at),
   };
 }
 
@@ -168,6 +190,8 @@ export async function ensurePulseSeed(): Promise<{ ok: boolean; error?: string }
     kind: l.kind,
     jurisdiction: l.jurisdiction,
     contact_note: l.contactNote ?? null,
+    why_they_act: l.whyTheyAct ?? "",
+    notify_email: l.notifyEmail ?? null,
   }));
   const leaderRes = await rest("pulse_leaders", {
     method: "POST",
@@ -175,7 +199,24 @@ export async function ensurePulseSeed(): Promise<{ ok: boolean; error?: string }
     body: JSON.stringify(leaders),
   });
   if (!leaderRes.ok && leaderRes.status !== 409) {
-    return { ok: false, error: leaderRes.error };
+    // retry without new columns if migration not applied
+    const fallback = await rest("pulse_leaders", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=minimal",
+      body: JSON.stringify(
+        SEED_LEADERS.map((l) => ({
+          id: l.id,
+          name: l.name,
+          title: l.title,
+          kind: l.kind,
+          jurisdiction: l.jurisdiction,
+          contact_note: l.contactNote ?? null,
+        })),
+      ),
+    });
+    if (!fallback.ok && fallback.status !== 409) {
+      return { ok: false, error: leaderRes.error };
+    }
   }
 
   const petitions = SEED_PETITIONS.map((p) => ({
@@ -192,6 +233,9 @@ export async function ensurePulseSeed(): Promise<{ ok: boolean; error?: string }
     created_at: p.createdAt,
     created_by_name: p.createdByName,
     hosted_not_endorsed: true,
+    parent_id: p.parentId ?? null,
+    why_this_seat: p.whyThisSeat ?? "",
+    locale_label: p.localeLabel ?? "",
   }));
   const petRes = await rest("pulse_petitions", {
     method: "POST",
@@ -199,7 +243,30 @@ export async function ensurePulseSeed(): Promise<{ ok: boolean; error?: string }
     body: JSON.stringify(petitions),
   });
   if (!petRes.ok && petRes.status !== 409) {
-    return { ok: false, error: petRes.error };
+    const fallback = await rest("pulse_petitions", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=minimal",
+      body: JSON.stringify(
+        SEED_PETITIONS.map((p) => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          summary: p.summary,
+          body: p.body,
+          ask: p.ask,
+          category: p.category,
+          featured: p.featured,
+          status: p.status,
+          leader_id: p.leaderId,
+          created_at: p.createdAt,
+          created_by_name: p.createdByName,
+          hosted_not_endorsed: true,
+        })),
+      ),
+    });
+    if (!fallback.ok && fallback.status !== 409) {
+      return { ok: false, error: petRes.error };
+    }
   }
   return { ok: true };
 }
@@ -212,6 +279,7 @@ export async function loadSharedPulse(): Promise<SharedSnapshot> {
       petitions: SEED_PETITIONS,
       signatures: [],
       responses: [],
+      notices: [],
       error: "Supabase not configured",
     };
   }
@@ -224,22 +292,27 @@ export async function loadSharedPulse(): Promise<SharedSnapshot> {
       petitions: SEED_PETITIONS,
       signatures: [],
       responses: [],
+      notices: [],
       error: seed.error,
     };
   }
 
-  const [leadersRes, petitionsRes, sigRes, respRes] = await Promise.all([
-    rest<Record<string, unknown>[]>("pulse_leaders?select=*&order=name.asc"),
-    rest<Record<string, unknown>[]>(
-      "pulse_petitions?select=*&order=created_at.desc",
-    ),
-    rest<Record<string, unknown>[]>(
-      "pulse_signatures?select=*&order=signed_at.desc",
-    ),
-    rest<Record<string, unknown>[]>(
-      "pulse_responses?select=*&order=created_at.desc",
-    ),
-  ]);
+  const [leadersRes, petitionsRes, sigRes, respRes, noticeRes] =
+    await Promise.all([
+      rest<Record<string, unknown>[]>("pulse_leaders?select=*&order=name.asc"),
+      rest<Record<string, unknown>[]>(
+        "pulse_petitions?select=*&order=created_at.desc",
+      ),
+      rest<Record<string, unknown>[]>(
+        "pulse_signatures?select=*&order=signed_at.desc",
+      ),
+      rest<Record<string, unknown>[]>(
+        "pulse_responses?select=*&order=created_at.desc",
+      ),
+      rest<Record<string, unknown>[]>(
+        "pulse_notices?select=*&order=created_at.desc&limit=200",
+      ),
+    ]);
 
   if (!leadersRes.ok || !petitionsRes.ok || !sigRes.ok || !respRes.ok) {
     const err =
@@ -254,6 +327,7 @@ export async function loadSharedPulse(): Promise<SharedSnapshot> {
       petitions: SEED_PETITIONS,
       signatures: [],
       responses: [],
+      notices: [],
       error: err,
     };
   }
@@ -266,18 +340,42 @@ export async function loadSharedPulse(): Promise<SharedSnapshot> {
   const petitions = [
     ...SEED_PETITIONS.map((seedPet) => {
       const row = dbPetitions.find((p) => p.id === seedPet.id);
-      return row ? { ...seedPet, status: row.status } : seedPet;
+      return row
+        ? {
+            ...seedPet,
+            status: row.status,
+            parentId: row.parentId ?? seedPet.parentId,
+            whyThisSeat: row.whyThisSeat || seedPet.whyThisSeat,
+            localeLabel: row.localeLabel || seedPet.localeLabel,
+          }
+        : seedPet;
     }),
     ...userPets,
   ];
   const userLeaders = dbLeaders.filter((l) => !seedLeaderIds.has(l.id));
+  // Prefer seed enrichment for whyTheyAct when DB row lacks it
+  const leaders = [
+    ...SEED_LEADERS.map((seedL) => {
+      const row = dbLeaders.find((l) => l.id === seedL.id);
+      return row
+        ? {
+            ...seedL,
+            ...row,
+            whyTheyAct: row.whyTheyAct || seedL.whyTheyAct,
+            contactNote: row.contactNote || seedL.contactNote,
+          }
+        : seedL;
+    }),
+    ...userLeaders,
+  ];
 
   return {
     persistence: "lpl",
-    leaders: [...SEED_LEADERS, ...userLeaders],
+    leaders,
     petitions,
     signatures: sigRes.data.map(mapSignature),
     responses: respRes.data.map(mapResponse),
+    notices: noticeRes.ok ? noticeRes.data.map(mapNotice) : [],
   };
 }
 
@@ -681,11 +779,29 @@ export async function insertPetition(input: {
   leaderId: string;
   createdByName: string;
   slug: string;
+  parentId?: string;
+  whyThisSeat?: string;
+  localeLabel?: string;
 }): Promise<{ ok: true; petition: Petition } | { ok: false; error: string }> {
   if (!supabaseConfig()) {
     return { ok: false, error: "Shared database is not configured yet." };
   }
   await ensurePulseSeed();
+  const leader =
+    SEED_LEADERS.find((l) => l.id === input.leaderId) ||
+    (
+      await rest<Record<string, unknown>[]>(
+        `pulse_leaders?id=eq.${encodeURIComponent(input.leaderId)}&select=*&limit=1`,
+      )
+    ).data?.[0];
+  const whyDefault =
+    input.whyThisSeat?.trim() ||
+    (leader && "whyTheyAct" in leader
+      ? String((leader as Leader).whyTheyAct || "")
+      : leader && typeof leader === "object"
+        ? String((leader as Record<string, unknown>).why_they_act || "")
+        : "");
+
   const id = newId("pet");
   const createdAt = new Date().toISOString();
   const row = {
@@ -702,17 +818,127 @@ export async function insertPetition(input: {
     created_at: createdAt,
     created_by_name: input.createdByName.trim() || "Neighbor",
     hosted_not_endorsed: true,
+    parent_id: input.parentId || null,
+    why_this_seat: whyDefault,
+    locale_label: input.localeLabel?.trim() || "",
   };
-  const res = await rest<Record<string, unknown>[]>("pulse_petitions", {
+  let res = await rest<Record<string, unknown>[]>("pulse_petitions", {
+    method: "POST",
+    prefer: "return=representation",
+    body: JSON.stringify(row),
+  });
+  if (!res.ok && res.error.includes("parent_id")) {
+    const { parent_id: _p, why_this_seat: _w, locale_label: _l, ...basic } = row;
+    res = await rest<Record<string, unknown>[]>("pulse_petitions", {
+      method: "POST",
+      prefer: "return=representation",
+      body: JSON.stringify(basic),
+    });
+  }
+  if (!res.ok) {
+    return { ok: false, error: res.error || "Could not create signal." };
+  }
+  const saved = Array.isArray(res.data) ? res.data[0] : row;
+  const petition = mapPetition(saved as Record<string, unknown>);
+  return {
+    ok: true,
+    petition: {
+      ...petition,
+      parentId: petition.parentId || input.parentId,
+      whyThisSeat: petition.whyThisSeat || whyDefault,
+      localeLabel: petition.localeLabel || input.localeLabel,
+    },
+  };
+}
+
+export async function forkPetition(input: {
+  parentId: string;
+  leaderId: string;
+  localeLabel: string;
+  createdByName: string;
+}): Promise<{ ok: true; petition: Petition } | { ok: false; error: string }> {
+  await ensurePulseSeed();
+  const snap = await loadSharedPulse();
+  const parent =
+    snap.petitions.find((p) => p.id === input.parentId) ||
+    SEED_PETITIONS.find((p) => p.id === input.parentId);
+  if (!parent) return { ok: false, error: "Parent campaign not found." };
+
+  const leader =
+    snap.leaders.find((l) => l.id === input.leaderId) ||
+    SEED_LEADERS.find((l) => l.id === input.leaderId);
+  if (!leader) return { ok: false, error: "Pick a valid leader seat." };
+
+  const locale = input.localeLabel.trim() || leader.jurisdiction;
+  const title =
+    parent.title.length > 90
+      ? `${parent.title.slice(0, 87)}…`
+      : parent.title;
+  const baseSlug = `${parent.slug}-local`.slice(0, 60);
+  const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+
+  return insertPetition({
+    title: `${title} (${locale})`,
+    summary: parent.summary,
+    body: `${parent.body}\n\n---\nLocal campaign forked for **${locale}**. Parent signal: ${parent.slug}.`,
+    ask: parent.ask,
+    category: parent.category,
+    leaderId: input.leaderId,
+    createdByName: input.createdByName,
+    slug,
+    parentId: parent.id,
+    whyThisSeat:
+      leader.whyTheyAct ||
+      parent.whyThisSeat ||
+      "Local decision-maker for this fork.",
+    localeLabel: locale,
+  });
+}
+
+export async function insertNotice(input: {
+  petitionId: string;
+  leaderId: string;
+  channel: LeaderNotice["channel"];
+  subject: string;
+  body: string;
+  sentByName: string;
+  sentByEmail: string;
+}): Promise<{ ok: true; notice: LeaderNotice } | { ok: false; error: string }> {
+  if (!supabaseConfig()) {
+    return { ok: false, error: "Database not configured." };
+  }
+  if (!input.subject.trim() || !input.body.trim()) {
+    return { ok: false, error: "Notice subject and body are required." };
+  }
+  const id = newId("notice");
+  const row = {
+    id,
+    petition_id: input.petitionId,
+    leader_id: input.leaderId,
+    channel: input.channel,
+    status: "recorded",
+    subject: input.subject.trim(),
+    body: input.body.trim(),
+    sent_by_name: input.sentByName.trim() || "Neighbor",
+    sent_by_email: input.sentByEmail.trim().toLowerCase(),
+    created_at: new Date().toISOString(),
+  };
+  const res = await rest<Record<string, unknown>[]>("pulse_notices", {
     method: "POST",
     prefer: "return=representation",
     body: JSON.stringify(row),
   });
   if (!res.ok) {
-    return { ok: false, error: res.error || "Could not create signal." };
+    return {
+      ok: false,
+      error:
+        res.error.includes("pulse_notices") || res.status === 404
+          ? "Notice table not ready yet — copy the packet and email the office directly."
+          : res.error || "Could not record notice.",
+    };
   }
   const saved = Array.isArray(res.data) ? res.data[0] : row;
-  return { ok: true, petition: mapPetition(saved as Record<string, unknown>) };
+  return { ok: true, notice: mapNotice(saved as Record<string, unknown>) };
 }
 
 export function hasSupabaseConfig() {

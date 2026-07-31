@@ -20,6 +20,7 @@ function LeadersPage() {
   const signatures = usePulseStore((s) => s.signatures);
   const person = usePulseStore((s) => s.person);
   const setPerson = usePulseStore((s) => s.setPerson);
+  const notices = usePulseStore((s) => s.notices);
   const respondAsLeader = usePulseStore((s) => s.respondAsLeader);
   const avgIntensity = usePulseStore((s) => s.avgIntensity);
 
@@ -41,6 +42,14 @@ function LeadersPage() {
   const leader = leaders.find((l) => l.id === leaderId);
   const seatClaimed =
     Boolean(person?.isLeader && person.leaderId === leaderId);
+
+  const seatNotices = useMemo(
+    () =>
+      notices
+        .filter((n) => n.leaderId === leaderId)
+        .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
+    [notices, leaderId],
+  );
 
   async function claimSeat() {
     if (!leader) return;
@@ -144,6 +153,49 @@ function LeadersPage() {
         <p className="mb-6 text-sm text-success">
           You are responding as <strong>{leader.name}</strong>.
         </p>
+      )}
+
+      {seatNotices.length > 0 && (
+        <div className="surface-card mb-8 space-y-3 p-5">
+          <h2 className="font-display text-lg font-semibold">
+            Notices to this seat ({seatNotices.length})
+          </h2>
+          <p className="text-xs text-fg-muted">
+            Neighbors recorded a formal packet for this decision-maker. Delivery
+            is honest: copy/email is user-sent; in-app is stored here when the
+            seat is claimed.
+          </p>
+          <ul className="space-y-3">
+            {seatNotices.slice(0, 8).map((n) => {
+              const pet = petitions.find((p) => p.id === n.petitionId);
+              return (
+                <li
+                  key={n.id}
+                  className="rounded-[var(--radius-md)] border border-border bg-bg-elevated p-3 text-sm"
+                >
+                  <p className="font-medium text-fg">{n.subject}</p>
+                  <p className="mt-1 text-xs text-fg-subtle">
+                    {n.channel} · {formatDate(n.createdAt)} · from{" "}
+                    {n.sentByName}
+                    {pet ? (
+                      <>
+                        {" "}
+                        ·{" "}
+                        <Link
+                          to="/p/$slug"
+                          params={{ slug: pet.slug }}
+                          className="text-accent"
+                        >
+                          open signal
+                        </Link>
+                      </>
+                    ) : null}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
 
       <div className="space-y-4">

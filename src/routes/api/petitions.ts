@@ -24,6 +24,13 @@ export const Route = createFileRoute("/api/petitions")({
           leaderId: String(body.leaderId || ""),
           createdByName: String(body.createdByName || "Neighbor"),
           slug,
+          parentId: body.parentId ? String(body.parentId) : undefined,
+          whyThisSeat: body.whyThisSeat
+            ? String(body.whyThisSeat)
+            : undefined,
+          localeLabel: body.localeLabel
+            ? String(body.localeLabel)
+            : undefined,
         });
         if (!result.ok) {
           return Response.json(result, { status: 400 });

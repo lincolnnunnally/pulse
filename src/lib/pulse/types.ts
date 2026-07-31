@@ -21,6 +21,10 @@ export interface Leader {
   jurisdiction: string;
   /** Optional contact note shown on the petition */
   contactNote?: string;
+  /** Why this seat can implement the change */
+  whyTheyAct?: string;
+  /** Public contact for mailto notify (never required) */
+  notifyEmail?: string;
 }
 
 export interface Petition {
@@ -38,6 +42,25 @@ export interface Petition {
   createdByName: string;
   /** Hosting ≠ endorsement notice always shown */
   hostedNotEndorsed: true;
+  /** Fork parent campaign id */
+  parentId?: string;
+  /** Why this leader seat is the right decision-maker */
+  whyThisSeat?: string;
+  /** Local place label e.g. "Rockdale County, GA" */
+  localeLabel?: string;
+}
+
+export interface LeaderNotice {
+  id: string;
+  petitionId: string;
+  leaderId: string;
+  channel: "in_app" | "copy_email" | "mailto";
+  status: "recorded" | "claimed_seen" | "responded";
+  subject: string;
+  body: string;
+  sentByName: string;
+  sentByEmail: string;
+  createdAt: string;
 }
 
 export interface Signature {

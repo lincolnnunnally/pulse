@@ -3,14 +3,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CheckCircle2,
   Copy,
-  MapPin,
   MessageSquareText,
   Share2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { CampaignActions } from "@/components/pulse/campaign-actions";
 import { HostingNotice } from "@/components/pulse/hosting-notice";
 import { LevelCounts } from "@/components/pulse/level-counts";
+import { ResponsibleSeat } from "@/components/pulse/responsible-seat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,7 @@ function PetitionDetailPage() {
 
 function PetitionBody({ petition }: { petition: Petition }) {
   const leaders = usePulseStore((s) => s.leaders);
+  const petitions = usePulseStore((s) => s.petitions);
   const allSignatures = usePulseStore((s) => s.signatures);
   const allResponses = usePulseStore((s) => s.responses);
   const me = usePulseStore((s) => s.me);
@@ -171,22 +173,27 @@ function PetitionBody({ petition }: { petition: Petition }) {
             </div>
           )}
 
-          {leader && (
-            <div className="rounded-[var(--radius-lg)] border border-border bg-primary-soft/50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                Addressed to
-              </p>
-              <p className="mt-1 font-medium text-fg">{leader.name}</p>
-              <p className="text-sm text-fg-muted">
-                {leader.title} · {leader.jurisdiction}
-              </p>
-              {leader.contactNote && (
-                <p className="mt-2 inline-flex items-start gap-1.5 text-xs text-fg-muted">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  {leader.contactNote}
-                </p>
-              )}
-            </div>
+          <ResponsibleSeat leader={leader} petition={petition} />
+
+          {petition.parentId && (
+            <p className="text-xs text-fg-muted">
+              Forked from another campaign
+              {(() => {
+                const parent = petitions.find((x) => x.id === petition.parentId);
+                return parent ? (
+                  <>
+                    :{" "}
+                    <Link
+                      to="/p/$slug"
+                      params={{ slug: parent.slug }}
+                      className="font-medium text-accent"
+                    >
+                      {parent.title}
+                    </Link>
+                  </>
+                ) : null;
+              })()}
+            </p>
           )}
 
           <div className="space-y-3">
@@ -260,6 +267,17 @@ function PetitionBody({ petition }: { petition: Petition }) {
         </article>
 
         <aside className="space-y-4 lg:sticky lg:top-24">
+          <div className="surface-card p-5">
+            <h2 className="mb-3 font-display text-base font-semibold">
+              Spread &amp; escalate
+            </h2>
+            <CampaignActions
+              petition={petition}
+              leader={leader}
+              signatures={signatures}
+            />
+          </div>
+
           <div className="surface-card p-5">
             {done || hasSigned ? (
               <div className="space-y-4 text-center">
@@ -409,11 +427,11 @@ function PetitionBody({ petition }: { petition: Petition }) {
           </div>
 
           <div className="rounded-[var(--radius-lg)] border border-border bg-bg-elevated p-4 text-xs leading-relaxed text-fg-muted">
-            <p className="font-medium text-fg">For lawmakers reading this</p>
+            <p className="font-medium text-fg">For decision-makers</p>
             <p className="mt-1">
-              This is a narrow carve-out request, not a repeal of disease
-              controls. Signatures include place and intensity so volume is not
-              the only signal.
+              Counts are labeled by verification strength. Hosting is not
+              endorsement. Use “Notify” to receive a formal packet with L1–L4
+              breakdown.
             </p>
           </div>
         </aside>

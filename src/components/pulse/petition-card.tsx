@@ -53,7 +53,12 @@ export function PetitionCard({ petition }: { petition: Petition }) {
         {leader && (
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />
-            {leader.jurisdiction}
+            {petition.localeLabel || leader.jurisdiction}
+          </span>
+        )}
+        {petition.parentId && (
+          <span className="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+            Local fork
           </span>
         )}
         <span>{formatDate(petition.createdAt)}</span>

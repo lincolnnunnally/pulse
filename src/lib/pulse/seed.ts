@@ -8,6 +8,8 @@ export const SEED_LEADERS: Leader[] = [
     kind: "elected",
     jurisdiction: "Georgia General Assembly — Rockdale County",
     contactNote: "Find your exact member at legis.ga.gov/find-my-legislator",
+    whyTheyAct:
+      "State House members introduce and vote on amendments to O.C.G.A. statutes that bind the whole state.",
   },
   {
     id: "ldr-ga-senate-rockdale",
@@ -15,6 +17,8 @@ export const SEED_LEADERS: Leader[] = [
     title: "State Senator",
     kind: "elected",
     jurisdiction: "Georgia General Assembly — Rockdale region",
+    whyTheyAct:
+      "State Senators co-pass statute changes; both chambers are needed for a bill to become law.",
   },
   {
     id: "ldr-ga-ag",
@@ -22,6 +26,18 @@ export const SEED_LEADERS: Leader[] = [
     title: "State agriculture leadership",
     kind: "other",
     jurisdiction: "State of Georgia",
+    whyTheyAct:
+      "Agriculture leadership implements and interprets animal-feed and livestock health rules on the ground.",
+  },
+  {
+    id: "ldr-rockdale-school-board",
+    name: "Rockdale County School Board",
+    title: "Local school board",
+    kind: "school_board",
+    jurisdiction: "Rockdale County Public Schools",
+    contactNote: "Board policies govern cafeteria food handling pilots.",
+    whyTheyAct:
+      "School boards set local cafeteria policy and can authorize kitchen-to-farm pilots without waiting for the legislature.",
   },
   {
     id: "ldr-us-congress-ga",
@@ -30,6 +46,8 @@ export const SEED_LEADERS: Leader[] = [
     kind: "elected",
     jurisdiction: "United States — Georgia",
     contactNote: "Find your members at congress.gov/members/find-your-member",
+    whyTheyAct:
+      "Federal tax base and major revenue design sit with Congress, not state-only offices.",
   },
   {
     id: "ldr-us-house-ways-means",
@@ -37,6 +55,19 @@ export const SEED_LEADERS: Leader[] = [
     title: "Tax-writing committee leadership",
     kind: "elected",
     jurisdiction: "United States Congress",
+    whyTheyAct:
+      "Ways and Means is the primary House committee that writes federal tax legislation.",
+  },
+  {
+    id: "ldr-local-grocery-manager",
+    name: "Local grocery / store manager (example seat)",
+    title: "Store manager",
+    kind: "employer",
+    jurisdiction: "Your local store — customer constituency",
+    contactNote:
+      "Fork this seat type for any store: the manager decides assortment and local pilots.",
+    whyTheyAct:
+      "Store managers decide what appears on shelves and can pilot customer-requested changes without a law.",
   },
 ];
 
@@ -80,6 +111,9 @@ Hosting this petition on Pulse is not an endorsement by any host organization of
     createdAt: new Date().toISOString(),
     createdByName: "Georgia neighbors & local farms",
     hostedNotEndorsed: true,
+    whyThisSeat:
+      "Changing O.C.G.A. requires the Georgia General Assembly. A House member can sponsor or co-sponsor the carve-out bill; Senate concurrence follows.",
+    localeLabel: "State of Georgia",
   },
   {
     id: "pet-sample-school-lunch",
@@ -94,10 +128,13 @@ This petition asks the board for a written pilot policy — not a free-for-all. 
     category: "Schools",
     featured: false,
     status: "open",
-    leaderId: "ldr-ga-house-rockdale",
+    leaderId: "ldr-rockdale-school-board",
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     createdByName: "Local parent",
     hostedNotEndorsed: true,
+    whyThisSeat:
+      "School boards control cafeteria policy and vendor agreements. A board vote can start a pilot even before state statute changes.",
+    localeLabel: "Rockdale County, GA",
   },
   {
     id: "pet-consumption-tax-modernize",
@@ -120,11 +157,6 @@ Not a slogan overnight rewrite. A **serious, public study-and-phase plan** for a
 3. **Increases reliable collections** for federal *and* local governments that need predictable revenue for schools, roads, and safety.
 4. **Simplifies over time** — reduces the maze of special treatments that only specialists can use.
 
-**Why leaders should care**
-- More honest collections from a broader base can mean more revenue *without* only raising rates on wages people already report.
-- A clear public debate beats more opaque patches on the income code.
-- Constituents want fairness and understandability — not another thousand pages of carve-outs.
-
 **What this is not**
 - Not a demand to “tax everything tomorrow.”
 - Not an endorsement of any single private bill language.
@@ -139,5 +171,8 @@ Hosting this petition on Pulse is not an endorsement by any host organization of
     createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
     createdByName: "Citizens who want fairer collections",
     hostedNotEndorsed: true,
+    whyThisSeat:
+      "Federal tax design originates in Ways and Means. A study-and-phase directive from this committee is the realistic path to a broader base.",
+    localeLabel: "United States",
   },
 ];

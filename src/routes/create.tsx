@@ -25,6 +25,8 @@ function CreatePage() {
   const [category, setCategory] = useState("Local policy");
   const [leaderId, setLeaderId] = useState(leaders[0]?.id ?? "");
   const [createdByName, setCreatedByName] = useState(me?.name ?? "");
+  const [whyThisSeat, setWhyThisSeat] = useState("");
+  const [localeLabel, setLocaleLabel] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +42,8 @@ function CreatePage() {
       category,
       leaderId,
       createdByName: createdByName || "Neighbor",
+      whyThisSeat,
+      localeLabel,
     });
     if (!result.ok) {
       toast.error(result.error);
@@ -125,7 +129,7 @@ function CreatePage() {
           </div>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="leader">Leader this is addressed to</Label>
+          <Label htmlFor="leader">Who can implement this change?</Label>
           <select
             id="leader"
             value={leaderId}
@@ -138,6 +142,29 @@ function CreatePage() {
               </option>
             ))}
           </select>
+          <p className="text-xs text-fg-subtle">
+            Pick the seat that can actually decide — lawmaker, board, store
+            manager, HOA, etc.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="why-seat">Why this seat? (shown publicly)</Label>
+          <Textarea
+            id="why-seat"
+            value={whyThisSeat}
+            onChange={(e) => setWhyThisSeat(e.target.value)}
+            placeholder="e.g. Only the General Assembly can amend this statute…"
+            rows={2}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="locale">Place label</Label>
+          <Input
+            id="locale"
+            value={localeLabel}
+            onChange={(e) => setLocaleLabel(e.target.value)}
+            placeholder="e.g. Rockdale County, GA"
+          />
         </div>
         <Button type="submit" size="lg" className="w-full sm:w-auto">
           Publish signal
