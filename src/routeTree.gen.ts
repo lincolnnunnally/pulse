@@ -18,7 +18,9 @@ import { Route as MeRouteImport } from './routes/me'
 import { Route as PetitionsRouteImport } from './routes/petitions'
 import { Route as ApiAuthRouteImport } from './routes/api/auth'
 import { Route as ApiClaimLeaderRouteImport } from './routes/api/claim-leader'
+import { Route as ApiForkRouteImport } from './routes/api/fork'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiNoticesRouteImport } from './routes/api/notices'
 import { Route as ApiPetitionsRouteImport } from './routes/api/petitions'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiResponsesRouteImport } from './routes/api/responses'
@@ -71,9 +73,19 @@ const ApiClaimLeaderRoute = ApiClaimLeaderRouteImport.update({
   path: '/api/claim-leader',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiForkRoute = ApiForkRouteImport.update({
+  id: '/api/fork',
+  path: '/api/fork',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNoticesRoute = ApiNoticesRouteImport.update({
+  id: '/api/notices',
+  path: '/api/notices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPetitionsRoute = ApiPetitionsRouteImport.update({
@@ -117,7 +129,9 @@ export interface FileRoutesByFullPath {
   '/petitions': typeof PetitionsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/claim-leader': typeof ApiClaimLeaderRoute
+  '/api/fork': typeof ApiForkRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/notices': typeof ApiNoticesRoute
   '/api/petitions': typeof ApiPetitionsRoute
   '/api/profile': typeof ApiProfileRoute
   '/api/responses': typeof ApiResponsesRoute
@@ -135,7 +149,9 @@ export interface FileRoutesByTo {
   '/petitions': typeof PetitionsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/claim-leader': typeof ApiClaimLeaderRoute
+  '/api/fork': typeof ApiForkRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/notices': typeof ApiNoticesRoute
   '/api/petitions': typeof ApiPetitionsRoute
   '/api/profile': typeof ApiProfileRoute
   '/api/responses': typeof ApiResponsesRoute
@@ -154,7 +170,9 @@ export interface FileRoutesById {
   '/petitions': typeof PetitionsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/claim-leader': typeof ApiClaimLeaderRoute
+  '/api/fork': typeof ApiForkRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/notices': typeof ApiNoticesRoute
   '/api/petitions': typeof ApiPetitionsRoute
   '/api/profile': typeof ApiProfileRoute
   '/api/responses': typeof ApiResponsesRoute
@@ -174,7 +192,9 @@ export interface FileRouteTypes {
     | '/petitions'
     | '/api/auth'
     | '/api/claim-leader'
+    | '/api/fork'
     | '/api/health'
+    | '/api/notices'
     | '/api/petitions'
     | '/api/profile'
     | '/api/responses'
@@ -192,7 +212,9 @@ export interface FileRouteTypes {
     | '/petitions'
     | '/api/auth'
     | '/api/claim-leader'
+    | '/api/fork'
     | '/api/health'
+    | '/api/notices'
     | '/api/petitions'
     | '/api/profile'
     | '/api/responses'
@@ -210,7 +232,9 @@ export interface FileRouteTypes {
     | '/petitions'
     | '/api/auth'
     | '/api/claim-leader'
+    | '/api/fork'
     | '/api/health'
+    | '/api/notices'
     | '/api/petitions'
     | '/api/profile'
     | '/api/responses'
@@ -229,7 +253,9 @@ export interface RootRouteChildren {
   PetitionsRoute: typeof PetitionsRoute
   ApiAuthRoute: typeof ApiAuthRoute
   ApiClaimLeaderRoute: typeof ApiClaimLeaderRoute
+  ApiForkRoute: typeof ApiForkRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiNoticesRoute: typeof ApiNoticesRoute
   ApiPetitionsRoute: typeof ApiPetitionsRoute
   ApiProfileRoute: typeof ApiProfileRoute
   ApiResponsesRoute: typeof ApiResponsesRoute
@@ -303,11 +329,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiClaimLeaderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/fork': {
+      id: '/api/fork'
+      path: '/api/fork'
+      fullPath: '/api/fork'
+      preLoaderRoute: typeof ApiForkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health': {
       id: '/api/health'
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notices': {
+      id: '/api/notices'
+      path: '/api/notices'
+      fullPath: '/api/notices'
+      preLoaderRoute: typeof ApiNoticesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/petitions': {
@@ -365,7 +405,9 @@ const rootRouteChildren: RootRouteChildren = {
   PetitionsRoute: PetitionsRoute,
   ApiAuthRoute: ApiAuthRoute,
   ApiClaimLeaderRoute: ApiClaimLeaderRoute,
+  ApiForkRoute: ApiForkRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiNoticesRoute: ApiNoticesRoute,
   ApiPetitionsRoute: ApiPetitionsRoute,
   ApiProfileRoute: ApiProfileRoute,
   ApiResponsesRoute: ApiResponsesRoute,
