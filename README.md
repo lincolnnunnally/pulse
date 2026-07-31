@@ -11,13 +11,20 @@ Owner definition: `life-produces-life-source-of-truth` → `_SOURCE_OF_TRUTH/07_
 - Hosting ≠ endorsement (shown on every petition)
 - Leader-agnostic: elected officials, school boards, churches, HOAs, etc.
 
-## Featured seed signal
+## Featured seed signals
 
-**Georgia food-to-farms carve-out** — allow unsold, cooked, never-served kitchen food to go to local livestock under sanitation rules, without treating it as illegal “garbage.”
+1. **Georgia food-to-farms carve-out** — allow unsold, cooked, never-served kitchen food to go to local livestock under sanitation rules, without treating it as illegal “garbage.” (O.C.G.A. §§ 4-4-20–21)
+2. **Consumption tax study & phase** — broaden what is collected beyond wage income so more real economic activity is fairly captured at federal and local levels, with protections for working families.
 
 ## Stack
 
-TanStack Start, React 19, Tailwind v4, Zustand (local demo persistence).
+TanStack Start, React 19, Tailwind v4, Zustand (browser persistence for v1 signatures).  
+**Database rule:** Lincoln ecosystem apps use **LPL Supabase**, not Neon. Shared Postgres persistence is the next hardening step; v1 ships usable signals in-browser first.
+
+## Not to confuse
+
+- ChurchConnect **Journal Pulse** is a different feature (church engagement).
+- `pulse.vercel.app` third-party heart-rate sites are unrelated.
 
 ## Scripts
 

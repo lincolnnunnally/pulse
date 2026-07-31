@@ -23,6 +23,21 @@ export const SEED_LEADERS: Leader[] = [
     kind: "other",
     jurisdiction: "State of Georgia",
   },
+  {
+    id: "ldr-us-congress-ga",
+    name: "U.S. Congress (Georgia delegation)",
+    title: "Members of Congress",
+    kind: "elected",
+    jurisdiction: "United States — Georgia",
+    contactNote: "Find your members at congress.gov/members/find-your-member",
+  },
+  {
+    id: "ldr-us-house-ways-means",
+    name: "U.S. House Committee on Ways and Means",
+    title: "Tax-writing committee leadership",
+    kind: "elected",
+    jurisdiction: "United States Congress",
+  },
 ];
 
 export const SEED_PETITIONS: Petition[] = [
@@ -82,6 +97,47 @@ This petition asks the board for a written pilot policy — not a free-for-all. 
     leaderId: "ldr-ga-house-rockdale",
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     createdByName: "Local parent",
+    hostedNotEndorsed: true,
+  },
+  {
+    id: "pet-consumption-tax-modernize",
+    slug: "modernize-us-tax-with-broad-consumption-tax",
+    title:
+      "Study and phase a broad consumption tax so more real economic activity is fairly captured",
+    summary:
+      "Our income-tax-heavy system misses a lot of activity that never shows up as wages. A carefully designed consumption tax can broaden what is collected at federal and local levels without only squeezing paychecks.",
+    body: `America’s tax stack is complicated, hard for ordinary people to navigate, and leaves large streams of economic activity lightly taxed or untaxed compared with wages that are withheld every paycheck.
+
+**The problem**
+- Wage income is easy to see and easy to tax.
+- Much other activity — cash-heavy trades, certain international flows, consumption by people whose income is hard to track — is harder to capture under current income-tax rules.
+- Complexity itself is a cost: compliance time, software, and loopholes favor those who can afford advisors.
+
+**What this signal asks for**
+Not a slogan overnight rewrite. A **serious, public study-and-phase plan** for a **broad consumption tax** (sales / VAT-style or hybrid) that:
+1. **Broadens the base** — captures more real purchases and economic activity that today’s income-tax machinery misses.
+2. **Protects working families** — pairs any shift with clear relief (e.g. rebates, exemptions on essentials, or credits) so the poor are not hit hardest.
+3. **Increases reliable collections** for federal *and* local governments that need predictable revenue for schools, roads, and safety.
+4. **Simplifies over time** — reduces the maze of special treatments that only specialists can use.
+
+**Why leaders should care**
+- More honest collections from a broader base can mean more revenue *without* only raising rates on wages people already report.
+- A clear public debate beats more opaque patches on the income code.
+- Constituents want fairness and understandability — not another thousand pages of carve-outs.
+
+**What this is not**
+- Not a demand to “tax everything tomorrow.”
+- Not an endorsement of any single private bill language.
+- Not a claim that consumption taxes solve every budget problem alone.
+
+Hosting this petition on Pulse is not an endorsement by any host organization of every political view — it is a lawful signal so leaders can see what people want.`,
+    ask: "Direct tax-writing committees and GA/US representatives to publish a public study-and-phase plan for a broad consumption-based tax component that captures more economic activity currently missed by income-tax administration, with explicit protections for low-income households and a path to simpler compliance.",
+    category: "Tax & budget",
+    featured: true,
+    status: "open",
+    leaderId: "ldr-us-house-ways-means",
+    createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+    createdByName: "Citizens who want fairer collections",
     hostedNotEndorsed: true,
   },
 ];

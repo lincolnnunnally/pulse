@@ -16,7 +16,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Modern petitioning that carries meaning to leaders and responses back to people. Start with local farm food-waste reform and any lawful signal your community needs.",
+          "Modern petitioning that carries meaning to leaders and responses back to people. Featured: Georgia food-to-farms (not garbage) and a fairer consumption-tax study.",
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],

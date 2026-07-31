@@ -41,6 +41,13 @@ function HomePage() {
                 Sign the Georgia food-to-farms signal
               </Link>
               <Link
+                to="/p/$slug"
+                params={{ slug: "modernize-us-tax-with-broad-consumption-tax" }}
+                className="inline-flex h-12 items-center justify-center rounded-[var(--radius-md)] border border-primary-fg/25 bg-transparent px-5 text-sm font-medium text-primary-fg no-underline hover:bg-primary-fg/10"
+              >
+                Sign the consumption-tax study signal
+              </Link>
+              <Link
                 to="/create"
                 className="inline-flex h-12 items-center justify-center rounded-[var(--radius-md)] border border-primary-fg/25 bg-transparent px-5 text-sm font-medium text-primary-fg no-underline hover:bg-primary-fg/10"
               >
@@ -88,8 +95,8 @@ function HomePage() {
               Featured signal
             </h2>
             <p className="mt-1 text-sm text-fg-muted">
-              The carve-out you asked for — ready to share with Georgia
-              lawmakers.
+              Today’s asks: Georgia food-to-farms (not “garbage”), and a serious
+              consumption-tax study so more real activity is fairly collected.
             </p>
           </div>
           <Link
