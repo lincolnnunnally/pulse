@@ -1,9 +1,16 @@
 import { SEED_LEADERS, SEED_PETITIONS } from "./seed";
+import { hashPassword, newId, newToken, verifyPassword } from "./crypto";
+import {
+  computeVerificationLevel,
+  type AddressStatus,
+  type VerificationLevel,
+} from "./verify";
 import type {
   Intensity,
   Leader,
   LeaderResponse,
   Petition,
+  PulsePerson,
   Signature,
 } from "./types";
 
@@ -15,6 +22,9 @@ type SharedSnapshot = {
   responses: LeaderResponse[];
   error?: string;
 };
+
+const SESSION_DAYS = 30;
+const COOKIE_NAME = "pulse_session";
 
 function supabaseConfig() {
   const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "")
@@ -101,9 +111,13 @@ function mapSignature(row: Record<string, unknown>): Signature {
     email: String(row.email),
     city: String(row.city),
     state: String(row.state || "GA"),
+    zip: row.zip ? String(row.zip) : undefined,
     intensity: Number(row.intensity) as Intensity,
     why: row.why ? String(row.why) : undefined,
     signedAt: String(row.signed_at),
+    verificationLevel: (Number(row.verification_level) || 1) as VerificationLevel,
+    addressStatus: (String(row.address_status || "none") as AddressStatus) || "none",
+    personId: row.person_id ? String(row.person_id) : undefined,
   };
 }
 
@@ -115,6 +129,32 @@ function mapResponse(row: Record<string, unknown>): LeaderResponse {
     message: String(row.message),
     createdAt: String(row.created_at),
   };
+}
+
+function mapPerson(row: Record<string, unknown>): PulsePerson {
+  return {
+    id: String(row.id),
+    email: String(row.email),
+    name: String(row.name),
+    city: String(row.city || ""),
+    state: String(row.state || ""),
+    zip: String(row.zip || ""),
+    street: String(row.street || ""),
+    emailVerified: Boolean(row.email_verified),
+    placeConfirmed: Boolean(row.place_confirmed),
+    addressStatus: (String(row.address_status || "none") as AddressStatus) || "none",
+    verificationLevel: (Number(row.verification_level) || 1) as VerificationLevel,
+    isLeader: Boolean(row.is_leader),
+    leaderId: row.leader_id ? String(row.leader_id) : undefined,
+  };
+}
+
+function personLevel(p: {
+  emailVerified: boolean;
+  placeConfirmed: boolean;
+  addressStatus: AddressStatus;
+}): VerificationLevel {
+  return computeVerificationLevel(p);
 }
 
 /** Ensure seed leaders + petitions exist in LPL (idempotent upsert). */
@@ -135,7 +175,6 @@ export async function ensurePulseSeed(): Promise<{ ok: boolean; error?: string }
     body: JSON.stringify(leaders),
   });
   if (!leaderRes.ok && leaderRes.status !== 409) {
-    // table missing or other error
     return { ok: false, error: leaderRes.error };
   }
 
@@ -221,8 +260,6 @@ export async function loadSharedPulse(): Promise<SharedSnapshot> {
 
   const dbLeaders = leadersRes.data.map(mapLeader);
   const dbPetitions = petitionsRes.data.map(mapPetition);
-
-  // Always surface seed petitions (updated copy) + any user-created rows.
   const seedIds = new Set(SEED_PETITIONS.map((p) => p.id));
   const seedLeaderIds = new Set(SEED_LEADERS.map((l) => l.id));
   const userPets = dbPetitions.filter((p) => !seedIds.has(p.id));
@@ -244,14 +281,281 @@ export async function loadSharedPulse(): Promise<SharedSnapshot> {
   };
 }
 
+async function createSession(personId: string): Promise<string> {
+  const token = newToken();
+  const expires = new Date(Date.now() + SESSION_DAYS * 864e5).toISOString();
+  const res = await rest("pulse_sessions", {
+    method: "POST",
+    prefer: "return=minimal",
+    body: JSON.stringify({
+      token,
+      person_id: personId,
+      expires_at: expires,
+    }),
+  });
+  if (!res.ok) throw new Error(res.error || "Could not create session");
+  return token;
+}
+
+export function sessionCookieHeader(token: string, maxAgeSec = SESSION_DAYS * 86400) {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`;
+}
+
+export function clearSessionCookieHeader() {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+}
+
+export function readSessionToken(request: Request): string | null {
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export async function getPersonBySession(
+  token: string | null,
+): Promise<PulsePerson | null> {
+  if (!token || !supabaseConfig()) return null;
+  const sess = await rest<Record<string, unknown>[]>(
+    `pulse_sessions?token=eq.${encodeURIComponent(token)}&select=*&limit=1`,
+  );
+  if (!sess.ok || !sess.data?.length) return null;
+  const row = sess.data[0];
+  if (new Date(String(row.expires_at)).getTime() < Date.now()) return null;
+  const people = await rest<Record<string, unknown>[]>(
+    `pulse_people?id=eq.${encodeURIComponent(String(row.person_id))}&select=*&limit=1`,
+  );
+  if (!people.ok || !people.data?.length) return null;
+  return mapPerson(people.data[0]);
+}
+
+export async function registerPerson(input: {
+  email: string;
+  password: string;
+  name: string;
+  city: string;
+  state: string;
+  zip?: string;
+  street?: string;
+}): Promise<
+  | { ok: true; person: PulsePerson; token: string }
+  | { ok: false; error: string }
+> {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !input.password || input.password.length < 8) {
+    return { ok: false, error: "Email and a password of at least 8 characters are required." };
+  }
+  if (!input.name.trim() || !input.city.trim()) {
+    return { ok: false, error: "Name and city are required." };
+  }
+  if (!supabaseConfig()) return { ok: false, error: "Database not configured." };
+  await ensurePulseSeed();
+
+  const city = input.city.trim();
+  const state = (input.state.trim() || "GA").slice(0, 2).toUpperCase();
+  const zip = (input.zip || "").trim();
+  const street = (input.street || "").trim();
+  const placeConfirmed = Boolean(city && state && zip);
+  const addressStatus: AddressStatus = street
+    ? "self_reported"
+    : "none";
+  const level = personLevel({
+    emailVerified: true, // account email is the login identity for this MVP
+    placeConfirmed,
+    addressStatus,
+  });
+
+  const id = newId("ppl");
+  const row = {
+    id,
+    email,
+    password_hash: hashPassword(input.password),
+    name: input.name.trim(),
+    city,
+    state,
+    zip,
+    street,
+    email_verified: true,
+    place_confirmed: placeConfirmed,
+    address_status: addressStatus,
+    verification_level: level,
+    is_leader: false,
+    leader_id: null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const res = await rest<Record<string, unknown>[]>("pulse_people", {
+    method: "POST",
+    prefer: "return=representation",
+    body: JSON.stringify(row),
+  });
+  if (!res.ok) {
+    if (res.status === 409 || res.error.toLowerCase().includes("duplicate")) {
+      return { ok: false, error: "An account with this email already exists. Sign in instead." };
+    }
+    return { ok: false, error: res.error || "Could not create account." };
+  }
+  const saved = Array.isArray(res.data) ? res.data[0] : row;
+  const person = mapPerson(saved as Record<string, unknown>);
+  const token = await createSession(person.id);
+  return { ok: true, person, token };
+}
+
+export async function loginPerson(input: {
+  email: string;
+  password: string;
+}): Promise<
+  | { ok: true; person: PulsePerson; token: string }
+  | { ok: false; error: string }
+> {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !input.password) {
+    return { ok: false, error: "Email and password are required." };
+  }
+  if (!supabaseConfig()) return { ok: false, error: "Database not configured." };
+
+  const people = await rest<Record<string, unknown>[]>(
+    `pulse_people?email=eq.${encodeURIComponent(email)}&select=*&limit=1`,
+  );
+  if (!people.ok || !people.data?.length) {
+    return { ok: false, error: "No account found for that email." };
+  }
+  const row = people.data[0];
+  if (!verifyPassword(input.password, String(row.password_hash))) {
+    return { ok: false, error: "Incorrect password." };
+  }
+  const person = mapPerson(row);
+  const token = await createSession(person.id);
+  return { ok: true, person, token };
+}
+
+export async function logoutSession(token: string | null): Promise<void> {
+  if (!token) return;
+  await rest(`pulse_sessions?token=eq.${encodeURIComponent(token)}`, {
+    method: "DELETE",
+    prefer: "return=minimal",
+  });
+}
+
+export async function updatePersonProfile(
+  personId: string,
+  input: {
+    name?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    street?: string;
+  },
+): Promise<{ ok: true; person: PulsePerson } | { ok: false; error: string }> {
+  const people = await rest<Record<string, unknown>[]>(
+    `pulse_people?id=eq.${encodeURIComponent(personId)}&select=*&limit=1`,
+  );
+  if (!people.ok || !people.data?.length) {
+    return { ok: false, error: "Account not found." };
+  }
+  const cur = people.data[0];
+  const name = (input.name ?? String(cur.name)).trim();
+  const city = (input.city ?? String(cur.city || "")).trim();
+  const state = ((input.state ?? String(cur.state || "GA")).trim() || "GA")
+    .slice(0, 2)
+    .toUpperCase();
+  const zip = (input.zip ?? String(cur.zip || "")).trim();
+  const street = (input.street ?? String(cur.street || "")).trim();
+  const placeConfirmed = Boolean(city && state && zip);
+  let addressStatus = String(cur.address_status || "none") as AddressStatus;
+  if (street) {
+    if (addressStatus === "none") addressStatus = "self_reported";
+  } else {
+    addressStatus = "none";
+  }
+  const level = personLevel({
+    emailVerified: Boolean(cur.email_verified),
+    placeConfirmed,
+    addressStatus,
+  });
+
+  const patch = {
+    name,
+    city,
+    state,
+    zip,
+    street,
+    place_confirmed: placeConfirmed,
+    address_status: addressStatus,
+    verification_level: level,
+    updated_at: new Date().toISOString(),
+  };
+  const res = await rest<Record<string, unknown>[]>(
+    `pulse_people?id=eq.${encodeURIComponent(personId)}`,
+    {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: JSON.stringify(patch),
+    },
+  );
+  if (!res.ok) return { ok: false, error: res.error || "Could not update profile." };
+  const saved = Array.isArray(res.data) ? res.data[0] : { ...cur, ...patch };
+  return { ok: true, person: mapPerson(saved as Record<string, unknown>) };
+}
+
+export async function claimLeaderSeat(input: {
+  personId: string;
+  leaderId: string;
+  note?: string;
+}): Promise<{ ok: true; person: PulsePerson } | { ok: false; error: string }> {
+  await ensurePulseSeed();
+  if (!SEED_LEADERS.some((l) => l.id === input.leaderId)) {
+    // still allow if in DB
+    const check = await rest<Record<string, unknown>[]>(
+      `pulse_leaders?id=eq.${encodeURIComponent(input.leaderId)}&select=id&limit=1`,
+    );
+    if (!check.ok || !check.data?.length) {
+      return { ok: false, error: "Unknown leader seat." };
+    }
+  }
+
+  const claimId = newId("claim");
+  await rest("pulse_leader_claims", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates,return=minimal",
+    body: JSON.stringify({
+      id: claimId,
+      leader_id: input.leaderId,
+      person_id: input.personId,
+      status: "verified", // pilot: self-claim with honesty notice; staff review later
+      note: input.note?.trim() || "Self-claim pilot — seat verification pending full review",
+    }),
+  });
+
+  const res = await rest<Record<string, unknown>[]>(
+    `pulse_people?id=eq.${encodeURIComponent(input.personId)}`,
+    {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: JSON.stringify({
+        is_leader: true,
+        leader_id: input.leaderId,
+        updated_at: new Date().toISOString(),
+      }),
+    },
+  );
+  if (!res.ok) return { ok: false, error: res.error || "Could not claim seat." };
+  const saved = Array.isArray(res.data) ? res.data[0] : null;
+  if (!saved) return { ok: false, error: "Could not claim seat." };
+  return { ok: true, person: mapPerson(saved) };
+}
+
 export async function insertSignature(input: {
   petitionId: string;
   name: string;
   email: string;
   city: string;
   state: string;
+  zip?: string;
   intensity: Intensity;
   why?: string;
+  person?: PulsePerson | null;
 }): Promise<{ ok: true; signature: Signature } | { ok: false; error: string }> {
   const email = input.email.trim().toLowerCase();
   if (!input.name.trim() || !email || !input.city.trim()) {
@@ -263,7 +567,25 @@ export async function insertSignature(input: {
 
   await ensurePulseSeed();
 
-  const id = `sig-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+  const person = input.person;
+  const placeConfirmed = Boolean(
+    person?.placeConfirmed || (input.city && input.state && (input.zip || person?.zip)),
+  );
+  const addressStatus: AddressStatus = person?.addressStatus || "none";
+  const level: VerificationLevel = person
+    ? person.verificationLevel
+    : personLevel({
+        emailVerified: false,
+        placeConfirmed,
+        addressStatus: "none",
+      });
+
+  // Require at least account-level for counted support when signed out — still allow guest
+  // but label as L1-weak: guests are L1 with place if zip provided
+  const guestLevel: VerificationLevel = placeConfirmed ? 2 : 1;
+  const verificationLevel = person ? level : guestLevel;
+
+  const id = newId("sig");
   const signedAt = new Date().toISOString();
   const row = {
     id,
@@ -272,9 +594,13 @@ export async function insertSignature(input: {
     email,
     city: input.city.trim(),
     state: input.state.trim() || "GA",
+    zip: (input.zip || person?.zip || "").trim(),
     intensity: input.intensity,
     why: input.why?.trim() || null,
     signed_at: signedAt,
+    verification_level: verificationLevel,
+    address_status: person?.addressStatus || "none",
+    person_id: person?.id || null,
   };
 
   const res = await rest<Record<string, unknown>[]>("pulse_signatures", {
@@ -288,14 +614,15 @@ export async function insertSignature(input: {
     }
     return { ok: false, error: res.error || "Could not save signature." };
   }
-  const saved = Array.isArray(res.data) ? res.data[0] : (res.data as unknown as Record<string, unknown>);
-  return { ok: true, signature: mapSignature(saved || row) };
+  const saved = Array.isArray(res.data) ? res.data[0] : row;
+  return { ok: true, signature: mapSignature(saved as Record<string, unknown>) };
 }
 
 export async function insertLeaderResponse(input: {
   petitionId: string;
   leaderId: string;
   message: string;
+  person?: PulsePerson | null;
 }): Promise<{ ok: true; response: LeaderResponse } | { ok: false; error: string }> {
   if (!input.message.trim()) {
     return { ok: false, error: "Response message is required." };
@@ -304,7 +631,20 @@ export async function insertLeaderResponse(input: {
     return { ok: false, error: "Shared database is not configured yet." };
   }
 
-  const id = `resp-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+  // Production: require claimed seat (D-P4)
+  if (
+    !input.person?.isLeader ||
+    !input.person.leaderId ||
+    input.person.leaderId !== input.leaderId
+  ) {
+    return {
+      ok: false,
+      error:
+        "Only a claimed leader seat can post a public response. Sign in and claim this seat under For leaders.",
+    };
+  }
+
+  const id = newId("resp");
   const createdAt = new Date().toISOString();
   const row = {
     id,
@@ -322,15 +662,14 @@ export async function insertLeaderResponse(input: {
     return { ok: false, error: res.error || "Could not save response." };
   }
 
-  // Mark petition responded
   await rest(`pulse_petitions?id=eq.${encodeURIComponent(input.petitionId)}`, {
     method: "PATCH",
     prefer: "return=minimal",
     body: JSON.stringify({ status: "responded" }),
   });
 
-  const saved = Array.isArray(res.data) ? res.data[0] : (res.data as unknown as Record<string, unknown>);
-  return { ok: true, response: mapResponse(saved || row) };
+  const saved = Array.isArray(res.data) ? res.data[0] : row;
+  return { ok: true, response: mapResponse(saved as Record<string, unknown>) };
 }
 
 export async function insertPetition(input: {
@@ -347,7 +686,7 @@ export async function insertPetition(input: {
     return { ok: false, error: "Shared database is not configured yet." };
   }
   await ensurePulseSeed();
-  const id = `pet-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+  const id = newId("pet");
   const createdAt = new Date().toISOString();
   const row = {
     id,
@@ -372,8 +711,8 @@ export async function insertPetition(input: {
   if (!res.ok) {
     return { ok: false, error: res.error || "Could not create signal." };
   }
-  const saved = Array.isArray(res.data) ? res.data[0] : (res.data as unknown as Record<string, unknown>);
-  return { ok: true, petition: mapPetition(saved || row) };
+  const saved = Array.isArray(res.data) ? res.data[0] : row;
+  return { ok: true, petition: mapPetition(saved as Record<string, unknown>) };
 }
 
 export function hasSupabaseConfig() {

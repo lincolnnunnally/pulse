@@ -1,28 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  claimLeaderSeat,
   getPersonBySession,
-  insertLeaderResponse,
   readSessionToken,
 } from "@/lib/pulse/server";
 
-export const Route = createFileRoute("/api/responses")({
+export const Route = createFileRoute("/api/claim-leader")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const person = await getPersonBySession(readSessionToken(request));
+        if (!person) {
+          return Response.json(
+            { ok: false, error: "Sign in before claiming a leader seat." },
+            { status: 401 },
+          );
+        }
         const body = (await request.json().catch(() => ({}))) as Record<
           string,
           unknown
         >;
-        const result = await insertLeaderResponse({
-          petitionId: String(body.petitionId || ""),
+        const result = await claimLeaderSeat({
+          personId: person.id,
           leaderId: String(body.leaderId || ""),
-          message: String(body.message || ""),
-          person,
+          note: body.note ? String(body.note) : undefined,
         });
         if (!result.ok) {
-          const status = result.error.includes("claimed leader") ? 403 : 400;
-          return Response.json(result, { status });
+          return Response.json(result, { status: 400 });
         }
         return Response.json(result);
       },

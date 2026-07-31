@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+// Link used for account CTA
 import {
   CheckCircle2,
   Copy,
@@ -9,6 +10,7 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { HostingNotice } from "@/components/pulse/hosting-notice";
+import { LevelCounts } from "@/components/pulse/level-counts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,7 @@ function PetitionBody({ petition }: { petition: Petition }) {
   const allSignatures = usePulseStore((s) => s.signatures);
   const allResponses = usePulseStore((s) => s.responses);
   const me = usePulseStore((s) => s.me);
+  const person = usePulseStore((s) => s.person);
   const signPetition = usePulseStore((s) => s.signPetition);
   const hasSignedFn = usePulseStore((s) => s.hasSigned);
   const avgIntensityFn = usePulseStore((s) => s.avgIntensity);
@@ -67,10 +70,11 @@ function PetitionBody({ petition }: { petition: Petition }) {
   const avgIntensity = avgIntensityFn(petition.id);
   const hasSigned = me ? hasSignedFn(petition.id, me.email) : false;
 
-  const [name, setName] = useState(me?.name ?? "");
-  const [email, setEmail] = useState(me?.email ?? "");
-  const [city, setCity] = useState(me?.city ?? "");
-  const [state, setState] = useState(me?.state ?? "GA");
+  const [name, setName] = useState(me?.name ?? person?.name ?? "");
+  const [email, setEmail] = useState(me?.email ?? person?.email ?? "");
+  const [city, setCity] = useState(me?.city ?? person?.city ?? "");
+  const [state, setState] = useState(me?.state ?? person?.state ?? "GA");
+  const [zip, setZip] = useState(me?.zip ?? person?.zip ?? "");
   const [intensity, setIntensity] = useState<Intensity>(4);
   const [why, setWhy] = useState("");
   const [done, setDone] = useState(false);
@@ -89,6 +93,7 @@ function PetitionBody({ petition }: { petition: Petition }) {
       email,
       city,
       state,
+      zip,
       intensity,
       why,
     });
@@ -156,6 +161,15 @@ function PetitionBody({ petition }: { petition: Petition }) {
               </p>
             </div>
           </div>
+
+          {signatures.length > 0 && (
+            <div className="surface-card p-5">
+              <h2 className="mb-3 font-display text-lg font-semibold">
+                Verification mix
+              </h2>
+              <LevelCounts signatures={signatures} />
+            </div>
+          )}
 
           {leader && (
             <div className="rounded-[var(--radius-lg)] border border-border bg-primary-soft/50 p-4">
@@ -308,7 +322,7 @@ function PetitionBody({ petition }: { petition: Petition }) {
                     autoComplete="email"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="city">City</Label>
                     <Input
@@ -331,7 +345,26 @@ function PetitionBody({ petition }: { petition: Petition }) {
                       autoComplete="address-level1"
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="zip">ZIP</Label>
+                    <Input
+                      id="zip"
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value)}
+                      placeholder="30012"
+                      autoComplete="postal-code"
+                    />
+                  </div>
                 </div>
+                {!person && (
+                  <p className="text-xs text-fg-muted">
+                    <Link to="/account" className="font-medium text-accent">
+                      Create a free account
+                    </Link>{" "}
+                    with street address so your signature counts at L3 for
+                    lawmakers.
+                  </p>
+                )}
                 <div className="space-y-2">
                   <Label>How important is this to you?</Label>
                   <div className="flex gap-2">
@@ -368,8 +401,8 @@ function PetitionBody({ petition }: { petition: Petition }) {
                   Sign this signal
                 </Button>
                 <p className="text-center text-[11px] text-fg-subtle">
-                  Signatures are shared so leaders see one tally across devices.
-                  Identity verification depth is still open (owner ruling D-P3).
+                  Shared tally across devices. Counts are labeled by verification
+                  strength (L1–L4) so leaders can trust what they act on.
                 </p>
               </form>
             )}

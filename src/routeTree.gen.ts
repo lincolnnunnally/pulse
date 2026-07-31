@@ -11,12 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as LeadersRouteImport } from './routes/leaders'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as PetitionsRouteImport } from './routes/petitions'
+import { Route as ApiAuthRouteImport } from './routes/api/auth'
+import { Route as ApiClaimLeaderRouteImport } from './routes/api/claim-leader'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiPetitionsRouteImport } from './routes/api/petitions'
+import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiResponsesRouteImport } from './routes/api/responses'
 import { Route as ApiSignaturesRouteImport } from './routes/api/signatures'
 import { Route as ApiStateRouteImport } from './routes/api/state'
@@ -30,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -52,6 +61,16 @@ const PetitionsRoute = PetitionsRouteImport.update({
   path: '/petitions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthRoute = ApiAuthRouteImport.update({
+  id: '/api/auth',
+  path: '/api/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClaimLeaderRoute = ApiClaimLeaderRouteImport.update({
+  id: '/api/claim-leader',
+  path: '/api/claim-leader',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
@@ -60,6 +79,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
 const ApiPetitionsRoute = ApiPetitionsRouteImport.update({
   id: '/api/petitions',
   path: '/api/petitions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileRoute = ApiProfileRouteImport.update({
+  id: '/api/profile',
+  path: '/api/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiResponsesRoute = ApiResponsesRouteImport.update({
@@ -86,12 +110,16 @@ const PSlugRoute = PSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
   '/create': typeof CreateRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
+  '/api/auth': typeof ApiAuthRoute
+  '/api/claim-leader': typeof ApiClaimLeaderRoute
   '/api/health': typeof ApiHealthRoute
   '/api/petitions': typeof ApiPetitionsRoute
+  '/api/profile': typeof ApiProfileRoute
   '/api/responses': typeof ApiResponsesRoute
   '/api/signatures': typeof ApiSignaturesRoute
   '/api/state': typeof ApiStateRoute
@@ -100,12 +128,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
   '/create': typeof CreateRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
+  '/api/auth': typeof ApiAuthRoute
+  '/api/claim-leader': typeof ApiClaimLeaderRoute
   '/api/health': typeof ApiHealthRoute
   '/api/petitions': typeof ApiPetitionsRoute
+  '/api/profile': typeof ApiProfileRoute
   '/api/responses': typeof ApiResponsesRoute
   '/api/signatures': typeof ApiSignaturesRoute
   '/api/state': typeof ApiStateRoute
@@ -115,12 +147,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
   '/create': typeof CreateRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
+  '/api/auth': typeof ApiAuthRoute
+  '/api/claim-leader': typeof ApiClaimLeaderRoute
   '/api/health': typeof ApiHealthRoute
   '/api/petitions': typeof ApiPetitionsRoute
+  '/api/profile': typeof ApiProfileRoute
   '/api/responses': typeof ApiResponsesRoute
   '/api/signatures': typeof ApiSignaturesRoute
   '/api/state': typeof ApiStateRoute
@@ -131,12 +167,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/account'
     | '/create'
     | '/leaders'
     | '/me'
     | '/petitions'
+    | '/api/auth'
+    | '/api/claim-leader'
     | '/api/health'
     | '/api/petitions'
+    | '/api/profile'
     | '/api/responses'
     | '/api/signatures'
     | '/api/state'
@@ -145,12 +185,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/account'
     | '/create'
     | '/leaders'
     | '/me'
     | '/petitions'
+    | '/api/auth'
+    | '/api/claim-leader'
     | '/api/health'
     | '/api/petitions'
+    | '/api/profile'
     | '/api/responses'
     | '/api/signatures'
     | '/api/state'
@@ -159,12 +203,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/account'
     | '/create'
     | '/leaders'
     | '/me'
     | '/petitions'
+    | '/api/auth'
+    | '/api/claim-leader'
     | '/api/health'
     | '/api/petitions'
+    | '/api/profile'
     | '/api/responses'
     | '/api/signatures'
     | '/api/state'
@@ -174,12 +222,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AccountRoute: typeof AccountRoute
   CreateRoute: typeof CreateRoute
   LeadersRoute: typeof LeadersRoute
   MeRoute: typeof MeRoute
   PetitionsRoute: typeof PetitionsRoute
+  ApiAuthRoute: typeof ApiAuthRoute
+  ApiClaimLeaderRoute: typeof ApiClaimLeaderRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiPetitionsRoute: typeof ApiPetitionsRoute
+  ApiProfileRoute: typeof ApiProfileRoute
   ApiResponsesRoute: typeof ApiResponsesRoute
   ApiSignaturesRoute: typeof ApiSignaturesRoute
   ApiStateRoute: typeof ApiStateRoute
@@ -200,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -230,6 +289,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PetitionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth': {
+      id: '/api/auth'
+      path: '/api/auth'
+      fullPath: '/api/auth'
+      preLoaderRoute: typeof ApiAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/claim-leader': {
+      id: '/api/claim-leader'
+      path: '/api/claim-leader'
+      fullPath: '/api/claim-leader'
+      preLoaderRoute: typeof ApiClaimLeaderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health': {
       id: '/api/health'
       path: '/api/health'
@@ -242,6 +315,13 @@ declare module '@tanstack/react-router' {
       path: '/api/petitions'
       fullPath: '/api/petitions'
       preLoaderRoute: typeof ApiPetitionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile': {
+      id: '/api/profile'
+      path: '/api/profile'
+      fullPath: '/api/profile'
+      preLoaderRoute: typeof ApiProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/responses': {
@@ -278,12 +358,16 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AccountRoute: AccountRoute,
   CreateRoute: CreateRoute,
   LeadersRoute: LeadersRoute,
   MeRoute: MeRoute,
   PetitionsRoute: PetitionsRoute,
+  ApiAuthRoute: ApiAuthRoute,
+  ApiClaimLeaderRoute: ApiClaimLeaderRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiPetitionsRoute: ApiPetitionsRoute,
+  ApiProfileRoute: ApiProfileRoute,
   ApiResponsesRoute: ApiResponsesRoute,
   ApiSignaturesRoute: ApiSignaturesRoute,
   ApiStateRoute: ApiStateRoute,

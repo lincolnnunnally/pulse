@@ -1,3 +1,5 @@
+import type { AddressStatus, VerificationLevel } from "./verify";
+
 export type LeaderKind =
   | "elected"
   | "school_board"
@@ -45,9 +47,13 @@ export interface Signature {
   email: string;
   city: string;
   state: string;
+  zip?: string;
   intensity: Intensity;
   why?: string;
   signedAt: string;
+  verificationLevel?: VerificationLevel;
+  addressStatus?: AddressStatus;
+  personId?: string;
 }
 
 export interface LeaderResponse {
@@ -58,12 +64,28 @@ export interface LeaderResponse {
   createdAt: string;
 }
 
+/** Logged-in Pulse person (D-P3 / D-P4). */
+export interface PulsePerson {
+  id: string;
+  email: string;
+  name: string;
+  city: string;
+  state: string;
+  zip: string;
+  street: string;
+  emailVerified: boolean;
+  placeConfirmed: boolean;
+  addressStatus: AddressStatus;
+  verificationLevel: VerificationLevel;
+  isLeader: boolean;
+  leaderId?: string;
+}
+
 export interface PulseState {
   leaders: Leader[];
   petitions: Petition[];
   signatures: Signature[];
   responses: LeaderResponse[];
-  /** Local identity for this browser (demo) */
   me: {
     name: string;
     email: string;

@@ -7,6 +7,7 @@ const nav = [
   { to: "/petitions", label: "Signals" },
   { to: "/create", label: "Start a signal" },
   { to: "/leaders", label: "For leaders" },
+  { to: "/account", label: "Account" },
   { to: "/me", label: "My pulse" },
 ];
 

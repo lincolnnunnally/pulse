@@ -6,6 +6,7 @@ import type {
   Leader,
   LeaderResponse,
   Petition,
+  PulsePerson,
   Signature,
 } from "./types";
 import { slugify } from "@/lib/utils";
@@ -23,15 +24,18 @@ export interface PulseStore {
   responses: LeaderResponse[];
   persistence: PersistenceMode;
   sharedReady: boolean;
+  person: PulsePerson | null;
   me: {
     name: string;
     email: string;
     city: string;
     state: string;
+    zip?: string;
     isLeader: boolean;
     leaderId?: string;
   } | null;
   setMe: (me: PulseStore["me"]) => void;
+  setPerson: (person: PulsePerson | null) => void;
   applyShared: (input: {
     leaders: Leader[];
     petitions: Petition[];
@@ -45,6 +49,7 @@ export interface PulseStore {
     email: string;
     city: string;
     state: string;
+    zip?: string;
     intensity: Intensity;
     why?: string;
   }) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -82,8 +87,24 @@ export const usePulseStore = create<PulseStore>()(
       responses: [],
       persistence: "unknown",
       sharedReady: false,
+      person: null,
       me: null,
       setMe: (me) => set({ me }),
+      setPerson: (person) =>
+        set({
+          person,
+          me: person
+            ? {
+                name: person.name,
+                email: person.email,
+                city: person.city,
+                state: person.state,
+                zip: person.zip,
+                isLeader: person.isLeader,
+                leaderId: person.leaderId,
+              }
+            : null,
+        }),
       applyShared: (input) => {
         set({
           leaders: input.leaders.length ? input.leaders : SEED_LEADERS,
@@ -112,12 +133,14 @@ export const usePulseStore = create<PulseStore>()(
           const res = await fetch("/api/signatures", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify({
               petitionId: input.petitionId,
               name: input.name,
               email,
               city: input.city,
               state: input.state,
+              zip: input.zip,
               intensity: input.intensity,
               why: input.why,
             }),
@@ -137,6 +160,7 @@ export const usePulseStore = create<PulseStore>()(
                 email: sig.email,
                 city: sig.city,
                 state: sig.state,
+                zip: sig.zip,
                 isLeader: false,
               },
             }));
@@ -158,9 +182,11 @@ export const usePulseStore = create<PulseStore>()(
           email,
           city: input.city.trim(),
           state: input.state.trim() || "GA",
+          zip: input.zip?.trim(),
           intensity: input.intensity,
           why: input.why?.trim() || undefined,
           signedAt: new Date().toISOString(),
+          verificationLevel: input.zip?.trim() ? 2 : 1,
         };
         set((s) => ({
           signatures: [sig, ...s.signatures],
@@ -170,6 +196,7 @@ export const usePulseStore = create<PulseStore>()(
             email: sig.email,
             city: sig.city,
             state: sig.state,
+            zip: sig.zip,
             isLeader: false,
           },
         }));
@@ -186,6 +213,7 @@ export const usePulseStore = create<PulseStore>()(
         try {
           const res = await fetch("/api/petitions", {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...input, slug }),
           });
@@ -240,6 +268,7 @@ export const usePulseStore = create<PulseStore>()(
         try {
           const res = await fetch("/api/responses", {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(input),
           });
@@ -347,11 +376,14 @@ export function rehydratePulse() {
   void usePulseStore.persist.rehydrate();
 }
 
-/** Pull shared LPL snapshot (signatures across devices). */
+/** Pull shared LPL snapshot (signatures across devices) + session person. */
 export async function syncSharedPulse() {
   try {
-    const res = await fetch("/api/state");
-    const data = (await res.json()) as {
+    const [stateRes, authRes] = await Promise.all([
+      fetch("/api/state"),
+      fetch("/api/auth", { credentials: "include" }),
+    ]);
+    const data = (await stateRes.json()) as {
       ok?: boolean;
       persistence?: PersistenceMode;
       leaders?: Leader[];
@@ -367,12 +399,18 @@ export async function syncSharedPulse() {
         responses: data.responses ?? [],
         persistence: "lpl",
       });
-      return;
+    } else {
+      usePulseStore.setState({
+        sharedReady: true,
+        persistence: "local",
+      });
     }
-    usePulseStore.setState({
-      sharedReady: true,
-      persistence: data.persistence === "local" ? "local" : "local",
-    });
+    try {
+      const auth = (await authRes.json()) as { person?: PulsePerson | null };
+      if (auth.person) usePulseStore.getState().setPerson(auth.person);
+    } catch {
+      // no session
+    }
   } catch {
     usePulseStore.setState({ sharedReady: true, persistence: "local" });
   }

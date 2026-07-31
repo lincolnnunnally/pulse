@@ -1,11 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { insertSignature } from "@/lib/pulse/server";
+import {
+  getPersonBySession,
+  insertSignature,
+  readSessionToken,
+} from "@/lib/pulse/server";
 import type { Intensity } from "@/lib/pulse/types";
 
 export const Route = createFileRoute("/api/signatures")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const person = await getPersonBySession(readSessionToken(request));
         const body = (await request.json().catch(() => ({}))) as Record<
           string,
           unknown
@@ -19,12 +24,14 @@ export const Route = createFileRoute("/api/signatures")({
         }
         const result = await insertSignature({
           petitionId: String(body.petitionId || ""),
-          name: String(body.name || ""),
-          email: String(body.email || ""),
-          city: String(body.city || ""),
-          state: String(body.state || "GA"),
+          name: String(body.name || person?.name || ""),
+          email: String(body.email || person?.email || ""),
+          city: String(body.city || person?.city || ""),
+          state: String(body.state || person?.state || "GA"),
+          zip: body.zip ? String(body.zip) : person?.zip,
           intensity: intensity as Intensity,
           why: body.why ? String(body.why) : undefined,
+          person,
         });
         if (!result.ok) {
           const status = result.error.includes("already signed") ? 409 : 400;

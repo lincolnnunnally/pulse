@@ -40,6 +40,15 @@ export function PetitionCard({ petition }: { petition: Petition }) {
         <span className="inline-flex items-center gap-1">
           <Users className="h-3.5 w-3.5" />
           {formatCount(signatures.length)} signed
+          {signatures.length > 0 && (
+            <span className="text-fg-subtle">
+              · L3+{" "}
+              {
+                signatures.filter((s) => (s.verificationLevel ?? 1) >= 3)
+                  .length
+              }
+            </span>
+          )}
         </span>
         {leader && (
           <span className="inline-flex items-center gap-1">
