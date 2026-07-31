@@ -50,8 +50,8 @@ function LeadersPage() {
     toast.success(`Viewing inbox as ${leader.name}`);
   }
 
-  function sendResponse(petitionId: string) {
-    const result = respondAsLeader({ petitionId, leaderId, message });
+  async function sendResponse(petitionId: string) {
+    const result = await respondAsLeader({ petitionId, leaderId, message });
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -69,7 +69,7 @@ function LeadersPage() {
         </h1>
         <p className="text-sm text-fg-muted sm:text-base">
           See what people are asking, how strongly they care, and close the loop
-          with a public response. Demo mode — pick a leader seat to try it.
+          with a public response. Pick a leader seat to review the inbox.
         </p>
       </div>
 

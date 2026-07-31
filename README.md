@@ -18,8 +18,8 @@ Owner definition: `life-produces-life-source-of-truth` → `_SOURCE_OF_TRUTH/07_
 
 ## Stack
 
-TanStack Start, React 19, Tailwind v4, Zustand (browser persistence for v1 signatures).  
-**Database rule:** Lincoln ecosystem apps use **LPL Supabase**, not Neon. Shared Postgres persistence is the next hardening step; v1 ships usable signals in-browser first.
+TanStack Start, React 19, Tailwind v4, Zustand (local identity).  
+**Database:** shared **LPL Supabase** tables `pulse_*` via service-role REST (not Neon). Signatures and leader responses are shared across devices.
 
 ## Not to confuse
 

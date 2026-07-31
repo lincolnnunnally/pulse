@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { rehydratePulse } from "@/lib/pulse/store";
+import { rehydratePulse, syncSharedPulse } from "@/lib/pulse/store";
 
-/** Client-only: rehydrate zustand persist without SSR snapshot thrash */
+/** Client-only: rehydrate local identity, then pull shared LPL tallies. */
 export function PulseHydrate() {
   useEffect(() => {
     rehydratePulse();
+    void syncSharedPulse();
   }, []);
   return null;
 }

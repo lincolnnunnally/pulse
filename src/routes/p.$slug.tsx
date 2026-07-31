@@ -81,9 +81,9 @@ function PetitionBody({ petition }: { petition: Petition }) {
     return buckets;
   }, [signatures]);
 
-  function onSign(e: React.FormEvent) {
+  async function onSign(e: React.FormEvent) {
     e.preventDefault();
-    const result = signPetition({
+    const result = await signPetition({
       petitionId: petition.id,
       name,
       email,
@@ -368,8 +368,8 @@ function PetitionBody({ petition }: { petition: Petition }) {
                   Sign this signal
                 </Button>
                 <p className="text-center text-[11px] text-fg-subtle">
-                  Demo stores signatures in this browser. Production Pulse will
-                  use verified accounts.
+                  Signatures are shared so leaders see one tally across devices.
+                  Identity verification depth is still open (owner ruling D-P3).
                 </p>
               </form>
             )}

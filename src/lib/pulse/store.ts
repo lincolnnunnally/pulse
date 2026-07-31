@@ -14,11 +14,15 @@ function id(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 }
 
+export type PersistenceMode = "lpl" | "local" | "unknown";
+
 export interface PulseStore {
   leaders: Leader[];
   petitions: Petition[];
   signatures: Signature[];
   responses: LeaderResponse[];
+  persistence: PersistenceMode;
+  sharedReady: boolean;
   me: {
     name: string;
     email: string;
@@ -28,6 +32,13 @@ export interface PulseStore {
     leaderId?: string;
   } | null;
   setMe: (me: PulseStore["me"]) => void;
+  applyShared: (input: {
+    leaders: Leader[];
+    petitions: Petition[];
+    signatures: Signature[];
+    responses: LeaderResponse[];
+    persistence: PersistenceMode;
+  }) => void;
   signPetition: (input: {
     petitionId: string;
     name: string;
@@ -36,7 +47,7 @@ export interface PulseStore {
     state: string;
     intensity: Intensity;
     why?: string;
-  }) => { ok: true } | { ok: false; error: string };
+  }) => Promise<{ ok: true } | { ok: false; error: string }>;
   createPetition: (input: {
     title: string;
     summary: string;
@@ -45,12 +56,12 @@ export interface PulseStore {
     category: string;
     leaderId: string;
     createdByName: string;
-  }) => Petition;
+  }) => Promise<{ ok: true; petition: Petition } | { ok: false; error: string }>;
   respondAsLeader: (input: {
     petitionId: string;
     leaderId: string;
     message: string;
-  }) => { ok: true } | { ok: false; error: string };
+  }) => Promise<{ ok: true } | { ok: false; error: string }>;
   signatureCount: (petitionId: string) => number;
   hasSigned: (petitionId: string, email: string) => boolean;
   avgIntensity: (petitionId: string) => number;
@@ -69,9 +80,21 @@ export const usePulseStore = create<PulseStore>()(
       petitions: SEED_PETITIONS,
       signatures: [],
       responses: [],
+      persistence: "unknown",
+      sharedReady: false,
       me: null,
       setMe: (me) => set({ me }),
-      signPetition: (input) => {
+      applyShared: (input) => {
+        set({
+          leaders: input.leaders.length ? input.leaders : SEED_LEADERS,
+          petitions: input.petitions.length ? input.petitions : SEED_PETITIONS,
+          signatures: input.signatures,
+          responses: input.responses,
+          persistence: input.persistence,
+          sharedReady: true,
+        });
+      },
+      signPetition: async (input) => {
         const email = input.email.trim().toLowerCase();
         if (!input.name.trim() || !email || !input.city.trim()) {
           return { ok: false, error: "Name, email, and city are required." };
@@ -83,6 +106,51 @@ export const usePulseStore = create<PulseStore>()(
         if (!petition || petition.status === "closed") {
           return { ok: false, error: "This signal is not open for signatures." };
         }
+
+        // Prefer shared LPL API when available.
+        try {
+          const res = await fetch("/api/signatures", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              petitionId: input.petitionId,
+              name: input.name,
+              email,
+              city: input.city,
+              state: input.state,
+              intensity: input.intensity,
+              why: input.why,
+            }),
+          });
+          const data = (await res.json()) as {
+            ok: boolean;
+            error?: string;
+            signature?: Signature;
+          };
+          if (res.ok && data.ok && data.signature) {
+            const sig = data.signature;
+            set((s) => ({
+              signatures: [sig, ...s.signatures.filter((x) => x.id !== sig.id)],
+              persistence: "lpl",
+              me: s.me ?? {
+                name: sig.name,
+                email: sig.email,
+                city: sig.city,
+                state: sig.state,
+                isLeader: false,
+              },
+            }));
+            return { ok: true };
+          }
+          // If API is configured but rejects (duplicate etc.), surface it.
+          if (res.status === 409 || (data.error && !data.error.includes("not configured"))) {
+            return { ok: false, error: data.error || "Could not save signature." };
+          }
+          // Fall through to local if shared not configured.
+        } catch {
+          // network — fall back to local
+        }
+
         const sig: Signature = {
           id: id("sig"),
           petitionId: input.petitionId,
@@ -96,6 +164,7 @@ export const usePulseStore = create<PulseStore>()(
         };
         set((s) => ({
           signatures: [sig, ...s.signatures],
+          persistence: s.persistence === "lpl" ? "lpl" : "local",
           me: s.me ?? {
             name: sig.name,
             email: sig.email,
@@ -106,13 +175,40 @@ export const usePulseStore = create<PulseStore>()(
         }));
         return { ok: true };
       },
-      createPetition: (input) => {
+      createPetition: async (input) => {
         const base = slugify(input.title) || "signal";
         let slug = base;
         let n = 2;
         while (get().petitions.some((p) => p.slug === slug)) {
           slug = `${base}-${n++}`;
         }
+
+        try {
+          const res = await fetch("/api/petitions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...input, slug }),
+          });
+          const data = (await res.json()) as {
+            ok: boolean;
+            error?: string;
+            petition?: Petition;
+          };
+          if (res.ok && data.ok && data.petition) {
+            const petition = data.petition;
+            set((s) => ({
+              petitions: [petition, ...s.petitions.filter((p) => p.id !== petition.id)],
+              persistence: "lpl",
+            }));
+            return { ok: true, petition };
+          }
+          if (data.error && !data.error.includes("not configured")) {
+            return { ok: false, error: data.error };
+          }
+        } catch {
+          // local fallback
+        }
+
         const petition: Petition = {
           id: id("pet"),
           slug,
@@ -129,9 +225,9 @@ export const usePulseStore = create<PulseStore>()(
           hostedNotEndorsed: true,
         };
         set((s) => ({ petitions: [petition, ...s.petitions] }));
-        return petition;
+        return { ok: true, petition };
       },
-      respondAsLeader: (input) => {
+      respondAsLeader: async (input) => {
         const petition = get().petitions.find((p) => p.id === input.petitionId);
         if (!petition) return { ok: false, error: "Signal not found." };
         if (petition.leaderId !== input.leaderId) {
@@ -140,6 +236,38 @@ export const usePulseStore = create<PulseStore>()(
             error: "This signal is addressed to a different leader.",
           };
         }
+
+        try {
+          const res = await fetch("/api/responses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+          });
+          const data = (await res.json()) as {
+            ok: boolean;
+            error?: string;
+            response?: LeaderResponse;
+          };
+          if (res.ok && data.ok && data.response) {
+            const response = data.response;
+            set((s) => ({
+              responses: [response, ...s.responses.filter((r) => r.id !== response.id)],
+              petitions: s.petitions.map((p) =>
+                p.id === input.petitionId
+                  ? { ...p, status: "responded" as const }
+                  : p,
+              ),
+              persistence: "lpl",
+            }));
+            return { ok: true };
+          }
+          if (data.error && !data.error.includes("not configured")) {
+            return { ok: false, error: data.error };
+          }
+        } catch {
+          // local
+        }
+
         const response: LeaderResponse = {
           id: id("resp"),
           petitionId: input.petitionId,
@@ -196,16 +324,18 @@ export const usePulseStore = create<PulseStore>()(
           ...current,
           leaders: [...SEED_LEADERS, ...userLeaders],
           petitions,
+          // Shared LPL will replace these on hydrate when available.
           signatures: p.signatures ?? [],
           responses: p.responses ?? [],
           me: p.me ?? null,
+          persistence: "unknown",
+          sharedReady: false,
         };
       },
       partialize: (s) => ({
         leaders: s.leaders,
         petitions: s.petitions,
-        signatures: s.signatures,
-        responses: s.responses,
+        // Keep local me only; signatures come from shared when online.
         me: s.me,
       }),
     },
@@ -215,4 +345,35 @@ export const usePulseStore = create<PulseStore>()(
 /** Call once on the client after mount */
 export function rehydratePulse() {
   void usePulseStore.persist.rehydrate();
+}
+
+/** Pull shared LPL snapshot (signatures across devices). */
+export async function syncSharedPulse() {
+  try {
+    const res = await fetch("/api/state");
+    const data = (await res.json()) as {
+      ok?: boolean;
+      persistence?: PersistenceMode;
+      leaders?: Leader[];
+      petitions?: Petition[];
+      signatures?: Signature[];
+      responses?: LeaderResponse[];
+    };
+    if (data.persistence === "lpl" && data.signatures) {
+      usePulseStore.getState().applyShared({
+        leaders: data.leaders ?? SEED_LEADERS,
+        petitions: data.petitions ?? SEED_PETITIONS,
+        signatures: data.signatures,
+        responses: data.responses ?? [],
+        persistence: "lpl",
+      });
+      return;
+    }
+    usePulseStore.setState({
+      sharedReady: true,
+      persistence: data.persistence === "local" ? "local" : "local",
+    });
+  } catch {
+    usePulseStore.setState({ sharedReady: true, persistence: "local" });
+  }
 }

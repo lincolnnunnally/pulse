@@ -15,6 +15,11 @@ import { Route as CreateRouteImport } from './routes/create'
 import { Route as LeadersRouteImport } from './routes/leaders'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as PetitionsRouteImport } from './routes/petitions'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiPetitionsRouteImport } from './routes/api/petitions'
+import { Route as ApiResponsesRouteImport } from './routes/api/responses'
+import { Route as ApiSignaturesRouteImport } from './routes/api/signatures'
+import { Route as ApiStateRouteImport } from './routes/api/state'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +52,31 @@ const PetitionsRoute = PetitionsRouteImport.update({
   path: '/petitions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPetitionsRoute = ApiPetitionsRouteImport.update({
+  id: '/api/petitions',
+  path: '/api/petitions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiResponsesRoute = ApiResponsesRouteImport.update({
+  id: '/api/responses',
+  path: '/api/responses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSignaturesRoute = ApiSignaturesRouteImport.update({
+  id: '/api/signatures',
+  path: '/api/signatures',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStateRoute = ApiStateRouteImport.update({
+  id: '/api/state',
+  path: '/api/state',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
@@ -60,6 +90,11 @@ export interface FileRoutesByFullPath {
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/petitions': typeof ApiPetitionsRoute
+  '/api/responses': typeof ApiResponsesRoute
+  '/api/signatures': typeof ApiSignaturesRoute
+  '/api/state': typeof ApiStateRoute
   '/p/$slug': typeof PSlugRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +104,11 @@ export interface FileRoutesByTo {
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/petitions': typeof ApiPetitionsRoute
+  '/api/responses': typeof ApiResponsesRoute
+  '/api/signatures': typeof ApiSignaturesRoute
+  '/api/state': typeof ApiStateRoute
   '/p/$slug': typeof PSlugRoute
 }
 export interface FileRoutesById {
@@ -79,15 +119,42 @@ export interface FileRoutesById {
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/petitions': typeof ApiPetitionsRoute
+  '/api/responses': typeof ApiResponsesRoute
+  '/api/signatures': typeof ApiSignaturesRoute
+  '/api/state': typeof ApiStateRoute
   '/p/$slug': typeof PSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/about' | '/create' | '/leaders' | '/me' | '/petitions' | '/p/$slug'
+    | '/'
+    | '/about'
+    | '/create'
+    | '/leaders'
+    | '/me'
+    | '/petitions'
+    | '/api/health'
+    | '/api/petitions'
+    | '/api/responses'
+    | '/api/signatures'
+    | '/api/state'
+    | '/p/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/about' | '/create' | '/leaders' | '/me' | '/petitions' | '/p/$slug'
+    | '/'
+    | '/about'
+    | '/create'
+    | '/leaders'
+    | '/me'
+    | '/petitions'
+    | '/api/health'
+    | '/api/petitions'
+    | '/api/responses'
+    | '/api/signatures'
+    | '/api/state'
+    | '/p/$slug'
   id:
     | '__root__'
     | '/'
@@ -96,6 +163,11 @@ export interface FileRouteTypes {
     | '/leaders'
     | '/me'
     | '/petitions'
+    | '/api/health'
+    | '/api/petitions'
+    | '/api/responses'
+    | '/api/signatures'
+    | '/api/state'
     | '/p/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -106,6 +178,11 @@ export interface RootRouteChildren {
   LeadersRoute: typeof LeadersRoute
   MeRoute: typeof MeRoute
   PetitionsRoute: typeof PetitionsRoute
+  ApiHealthRoute: typeof ApiHealthRoute
+  ApiPetitionsRoute: typeof ApiPetitionsRoute
+  ApiResponsesRoute: typeof ApiResponsesRoute
+  ApiSignaturesRoute: typeof ApiSignaturesRoute
+  ApiStateRoute: typeof ApiStateRoute
   PSlugRoute: typeof PSlugRoute
 }
 
@@ -153,6 +230,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PetitionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/petitions': {
+      id: '/api/petitions'
+      path: '/api/petitions'
+      fullPath: '/api/petitions'
+      preLoaderRoute: typeof ApiPetitionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/responses': {
+      id: '/api/responses'
+      path: '/api/responses'
+      fullPath: '/api/responses'
+      preLoaderRoute: typeof ApiResponsesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/signatures': {
+      id: '/api/signatures'
+      path: '/api/signatures'
+      fullPath: '/api/signatures'
+      preLoaderRoute: typeof ApiSignaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/state': {
+      id: '/api/state'
+      path: '/api/state'
+      fullPath: '/api/state'
+      preLoaderRoute: typeof ApiStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/p/$slug': {
       id: '/p/$slug'
       path: '/p/$slug'
@@ -170,6 +282,11 @@ const rootRouteChildren: RootRouteChildren = {
   LeadersRoute: LeadersRoute,
   MeRoute: MeRoute,
   PetitionsRoute: PetitionsRoute,
+  ApiHealthRoute: ApiHealthRoute,
+  ApiPetitionsRoute: ApiPetitionsRoute,
+  ApiResponsesRoute: ApiResponsesRoute,
+  ApiSignaturesRoute: ApiSignaturesRoute,
+  ApiStateRoute: ApiStateRoute,
   PSlugRoute: PSlugRoute,
 }
 export const routeTree = rootRouteImport

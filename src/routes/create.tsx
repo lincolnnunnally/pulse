@@ -26,13 +26,13 @@ function CreatePage() {
   const [leaderId, setLeaderId] = useState(leaders[0]?.id ?? "");
   const [createdByName, setCreatedByName] = useState(me?.name ?? "");
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !summary.trim() || !ask.trim() || !body.trim()) {
       toast.error("Title, summary, body, and ask are required.");
       return;
     }
-    const petition = createPetition({
+    const result = await createPetition({
       title,
       summary,
       body,
@@ -41,8 +41,12 @@ function CreatePage() {
       leaderId,
       createdByName: createdByName || "Neighbor",
     });
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
     toast.success("Signal published");
-    navigate({ to: "/p/$slug", params: { slug: petition.slug } });
+    navigate({ to: "/p/$slug", params: { slug: result.petition.slug } });
   }
 
   return (
