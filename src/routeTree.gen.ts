@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as LeadersRouteImport } from './routes/leaders'
 import { Route as MeRouteImport } from './routes/me'
@@ -27,6 +28,7 @@ import { Route as ApiResponsesRouteImport } from './routes/api/responses'
 import { Route as ApiSignaturesRouteImport } from './routes/api/signatures'
 import { Route as ApiStateRouteImport } from './routes/api/state'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as ApiAdminStatsRouteImport } from './routes/api/admin/stats'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +43,11 @@ const AboutRoute = AboutRouteImport.update({
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -118,11 +125,17 @@ const PSlugRoute = PSlugRouteImport.update({
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminStatsRoute = ApiAdminStatsRouteImport.update({
+  id: '/api/admin/stats',
+  path: '/api/admin/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/create': typeof CreateRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
@@ -138,11 +151,13 @@ export interface FileRoutesByFullPath {
   '/api/signatures': typeof ApiSignaturesRoute
   '/api/state': typeof ApiStateRoute
   '/p/$slug': typeof PSlugRoute
+  '/api/admin/stats': typeof ApiAdminStatsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/create': typeof CreateRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
@@ -158,12 +173,14 @@ export interface FileRoutesByTo {
   '/api/signatures': typeof ApiSignaturesRoute
   '/api/state': typeof ApiStateRoute
   '/p/$slug': typeof PSlugRoute
+  '/api/admin/stats': typeof ApiAdminStatsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/create': typeof CreateRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
@@ -179,6 +196,7 @@ export interface FileRoutesById {
   '/api/signatures': typeof ApiSignaturesRoute
   '/api/state': typeof ApiStateRoute
   '/p/$slug': typeof PSlugRoute
+  '/api/admin/stats': typeof ApiAdminStatsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -186,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/admin'
     | '/create'
     | '/leaders'
     | '/me'
@@ -201,11 +220,13 @@ export interface FileRouteTypes {
     | '/api/signatures'
     | '/api/state'
     | '/p/$slug'
+    | '/api/admin/stats'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/account'
+    | '/admin'
     | '/create'
     | '/leaders'
     | '/me'
@@ -221,11 +242,13 @@ export interface FileRouteTypes {
     | '/api/signatures'
     | '/api/state'
     | '/p/$slug'
+    | '/api/admin/stats'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/account'
+    | '/admin'
     | '/create'
     | '/leaders'
     | '/me'
@@ -241,12 +264,14 @@ export interface FileRouteTypes {
     | '/api/signatures'
     | '/api/state'
     | '/p/$slug'
+    | '/api/admin/stats'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
   CreateRoute: typeof CreateRoute
   LeadersRoute: typeof LeadersRoute
   MeRoute: typeof MeRoute
@@ -262,6 +287,7 @@ export interface RootRouteChildren {
   ApiSignaturesRoute: typeof ApiSignaturesRoute
   ApiStateRoute: typeof ApiStateRoute
   PSlugRoute: typeof PSlugRoute
+  ApiAdminStatsRoute: typeof ApiAdminStatsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,6 +311,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -392,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/stats': {
+      id: '/api/admin/stats'
+      path: '/api/admin/stats'
+      fullPath: '/api/admin/stats'
+      preLoaderRoute: typeof ApiAdminStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -399,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
   CreateRoute: CreateRoute,
   LeadersRoute: LeadersRoute,
   MeRoute: MeRoute,
@@ -414,16 +455,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSignaturesRoute: ApiSignaturesRoute,
   ApiStateRoute: ApiStateRoute,
   PSlugRoute: PSlugRoute,
+  ApiAdminStatsRoute: ApiAdminStatsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
