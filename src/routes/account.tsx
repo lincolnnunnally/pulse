@@ -151,7 +151,7 @@ function AuthPanel({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="street">Street (for L3)</Label>
+                <Label htmlFor="street">Street (self-reported, not L3 yet)</Label>
                 <Input
                   id="street"
                   value={street}
@@ -196,8 +196,8 @@ function AuthPanel({
               : "Sign in"}
         </Button>
         <p className="text-[11px] text-fg-subtle">
-          Street address is never shown publicly. Leaders see verification
-          strength (L1–L4), not your street.
+          Street is never public. An account counts as L1; city + ZIP is L2.
+          L3 is address-verified later — typing a street does not skip that.
         </p>
       </form>
 

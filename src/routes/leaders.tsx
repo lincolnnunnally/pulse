@@ -76,7 +76,7 @@ function LeadersPage() {
       }
       setPerson(data.person);
       toast.success(
-        `Seat claimed: ${leader.name}. Public responses now post from this seat.`,
+        `Seat claimed for this pilot: ${leader.name}. This is a self-claim, not independent office verification. You can still post a public response.`,
       );
     } finally {
       setClaiming(false);
@@ -142,7 +142,7 @@ function LeadersPage() {
           disabled={claiming || seatClaimed}
         >
           {seatClaimed
-            ? "Seat claimed"
+            ? "Seat claimed (pilot)"
             : claiming
               ? "Claiming…"
               : "Claim this seat"}
@@ -151,7 +151,8 @@ function LeadersPage() {
 
       {seatClaimed && leader && (
         <p className="mb-6 text-sm text-success">
-          You are responding as <strong>{leader.name}</strong>.
+          You are responding as <strong>{leader.name}</strong> (self-claimed
+          pilot seat — not independently verified).
         </p>
       )}
 

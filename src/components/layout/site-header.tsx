@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Activity, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { usePulseStore, syncSharedPulse } from "@/lib/pulse/store";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -14,9 +15,22 @@ const nav = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hydrateError = usePulseStore((s) => s.hydrateError);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-bg/90 backdrop-blur-md">
+      {hydrateError ? (
+        <div className="border-b border-signal/30 bg-signal-soft px-4 py-2 text-center text-xs text-fg">
+          {hydrateError}{" "}
+          <button
+            type="button"
+            className="font-medium text-accent underline-offset-2 hover:underline"
+            onClick={() => void syncSharedPulse()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
       <div className="page-shell flex h-14 items-center justify-between gap-3 sm:h-16">
         <Link to="/" className="flex items-center gap-2 text-fg no-underline">
           <span className="grid h-9 w-9 place-items-center rounded-[var(--radius-md)] bg-primary text-primary-fg">

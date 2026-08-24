@@ -6,22 +6,26 @@ export const Route = createFileRoute("/api/health")({
     handlers: {
       GET: async () => {
         const snap = await loadSharedPulse();
-        return Response.json({
-          ok: true,
-          app: "Pulse",
-          product:
-            "Two-way alignment signals between people and leaders (petitions with intensity + leader response)",
-          home: "https://pulse.unitedundergod.org",
-          persistence: snap.persistence,
-          configured: hasSupabaseConfig(),
-          signatureCount: snap.signatures.length,
-          responseCount: snap.responses.length,
-          error: snap.error,
-          featured: [
-            "ga-unsold-cooked-food-to-local-farms",
-            "modernize-us-tax-with-broad-consumption-tax",
-          ],
-        });
+        const ok = snap.persistence === "lpl" && !snap.error;
+        return Response.json(
+          {
+            ok,
+            app: "Pulse",
+            product:
+              "Two-way alignment signals between people and leaders (petitions with intensity + leader response)",
+            home: "https://pulse.unitedundergod.org",
+            persistence: snap.persistence,
+            configured: hasSupabaseConfig(),
+            signatureCount: snap.signatures.length,
+            responseCount: snap.responses.length,
+            error: snap.error,
+            featured: [
+              "ga-unsold-cooked-food-to-local-farms",
+              "modernize-us-tax-with-broad-consumption-tax",
+            ],
+          },
+          { status: ok ? 200 : 503 },
+        );
       },
     },
   },

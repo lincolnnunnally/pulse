@@ -459,7 +459,7 @@ export async function registerPerson(input: {
     ? "self_reported"
     : "none";
   const level = personLevel({
-    emailVerified: true, // account email is the login identity for this MVP
+    emailVerified: false,
     placeConfirmed,
     addressStatus,
   });
@@ -474,7 +474,7 @@ export async function registerPerson(input: {
     state,
     zip,
     street,
-    email_verified: true,
+    email_verified: false,
     place_confirmed: placeConfirmed,
     address_status: addressStatus,
     verification_level: level,
@@ -666,22 +666,15 @@ export async function insertSignature(input: {
   await ensurePulseSeed();
 
   const person = input.person;
-  const placeConfirmed = Boolean(
-    person?.placeConfirmed || (input.city && input.state && (input.zip || person?.zip)),
-  );
-  const addressStatus: AddressStatus = person?.addressStatus || "none";
-  const level: VerificationLevel = person
-    ? person.verificationLevel
-    : personLevel({
-        emailVerified: false,
-        placeConfirmed,
-        addressStatus: "none",
-      });
+  if (!person) {
+    return {
+      ok: false,
+      error:
+        "Create a free account so your support is counted. You can still browse without signing in.",
+    };
+  }
 
-  // Require at least account-level for counted support when signed out — still allow guest
-  // but label as L1-weak: guests are L1 with place if zip provided
-  const guestLevel: VerificationLevel = placeConfirmed ? 2 : 1;
-  const verificationLevel = person ? level : guestLevel;
+  const verificationLevel: VerificationLevel = person.verificationLevel;
 
   const id = newId("sig");
   const signedAt = new Date().toISOString();
@@ -787,13 +780,12 @@ export async function insertPetition(input: {
     return { ok: false, error: "Shared database is not configured yet." };
   }
   await ensurePulseSeed();
+  const leaderLookup = await rest<Record<string, unknown>[]>(
+    `pulse_leaders?id=eq.${encodeURIComponent(input.leaderId)}&select=*&limit=1`,
+  );
   const leader =
     SEED_LEADERS.find((l) => l.id === input.leaderId) ||
-    (
-      await rest<Record<string, unknown>[]>(
-        `pulse_leaders?id=eq.${encodeURIComponent(input.leaderId)}&select=*&limit=1`,
-      )
-    ).data?.[0];
+    (leaderLookup.ok ? leaderLookup.data?.[0] : undefined);
   const whyDefault =
     input.whyThisSeat?.trim() ||
     (leader && "whyTheyAct" in leader

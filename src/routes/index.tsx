@@ -12,6 +12,7 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const petitions = usePulseStore((s) => s.petitions);
   const signatures = usePulseStore((s) => s.signatures);
+  const sharedReady = usePulseStore((s) => s.sharedReady);
   const featured = petitions.filter((p) => p.featured);
   const rest = petitions.filter((p) => !p.featured).slice(0, 2);
 
@@ -65,7 +66,7 @@ function HomePage() {
               },
               {
                 label: "Signatures here",
-                value: formatCount(signatures.length),
+                value: sharedReady ? formatCount(signatures.length) : "—",
               },
               {
                 label: "Who it serves",

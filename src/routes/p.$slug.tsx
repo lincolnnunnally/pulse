@@ -306,6 +306,23 @@ function PetitionBody({ petition }: { petition: Petition }) {
                   </Button>
                 </div>
               </div>
+            ) : !person ? (
+              <div className="space-y-3">
+                <h2 className="font-display text-lg font-semibold">
+                  Sign in to be counted
+                </h2>
+                <p className="text-sm text-fg-muted">
+                  You can browse without an account. Support is only counted
+                  when you have one, so leaders can see labeled verification
+                  strength — not anonymous clicks.
+                </p>
+                <Link
+                  to="/account"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-primary px-4 text-sm font-medium text-primary-fg no-underline"
+                >
+                  Create a free account
+                </Link>
+              </div>
             ) : (
               <form onSubmit={onSign} className="space-y-4">
                 <div>
@@ -374,15 +391,10 @@ function PetitionBody({ petition }: { petition: Petition }) {
                     />
                   </div>
                 </div>
-                {!person && (
-                  <p className="text-xs text-fg-muted">
-                    <Link to="/account" className="font-medium text-accent">
-                      Create a free account
-                    </Link>{" "}
-                    with street address so your signature counts at L3 for
-                    lawmakers.
-                  </p>
-                )}
+                <p className="text-xs text-fg-muted">
+                  L3 (address-verified) is not automatic from typing a street.
+                  Place + ZIP is L2 until a later verification step.
+                </p>
                 <div className="space-y-2">
                   <Label>How important is this to you?</Label>
                   <div className="flex gap-2">
