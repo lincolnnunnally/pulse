@@ -24,11 +24,8 @@ export function computeVerificationLevel(input: {
   strongId?: boolean;
 }): VerificationLevel {
   if (input.strongId) return 4;
+  // D-P3: L3 is address-verified (postcard / records / vendor), not typing a street.
   if (input.addressStatus === "verified") return 3;
-  if (input.addressStatus === "self_reported" || input.addressStatus === "pending") {
-    // Self-reported address is address-tier but labeled weaker in UI via addressStatus
-    return 3;
-  }
   if (input.placeConfirmed) return 2;
   return 1;
 }

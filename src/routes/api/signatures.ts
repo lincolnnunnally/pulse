@@ -11,6 +11,16 @@ export const Route = createFileRoute("/api/signatures")({
     handlers: {
       POST: async ({ request }) => {
         const person = await getPersonBySession(readSessionToken(request));
+        if (!person) {
+          return Response.json(
+            {
+              ok: false,
+              error:
+                "Create a free account so your support is counted. You can still browse without signing in.",
+            },
+            { status: 401 },
+          );
+        }
         const body = (await request.json().catch(() => ({}))) as Record<
           string,
           unknown

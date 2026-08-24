@@ -12,10 +12,6 @@ import type {
 } from "./types";
 import { slugify } from "@/lib/utils";
 
-function id(prefix: string) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
-}
-
 export type PersistenceMode = "lpl" | "local" | "unknown";
 
 export interface PulseStore {
@@ -26,6 +22,7 @@ export interface PulseStore {
   notices: LeaderNotice[];
   persistence: PersistenceMode;
   sharedReady: boolean;
+  hydrateError: string | null;
   person: PulsePerson | null;
   me: {
     name: string;
@@ -94,6 +91,7 @@ export const usePulseStore = create<PulseStore>()(
       notices: [],
       persistence: "unknown",
       sharedReady: false,
+      hydrateError: null,
       person: null,
       me: null,
       setMe: (me) => set({ me }),
@@ -121,6 +119,7 @@ export const usePulseStore = create<PulseStore>()(
           notices: input.notices ?? [],
           persistence: input.persistence,
           sharedReady: true,
+          hydrateError: null,
         });
       },
       signPetition: async (input) => {
@@ -136,7 +135,6 @@ export const usePulseStore = create<PulseStore>()(
           return { ok: false, error: "This signal is not open for signatures." };
         }
 
-        // Prefer shared LPL API when available.
         try {
           const res = await fetch("/api/signatures", {
             method: "POST",
@@ -174,41 +172,16 @@ export const usePulseStore = create<PulseStore>()(
             }));
             return { ok: true };
           }
-          // If API is configured but rejects (duplicate etc.), surface it.
-          if (res.status === 409 || (data.error && !data.error.includes("not configured"))) {
-            return { ok: false, error: data.error || "Could not save signature." };
-          }
-          // Fall through to local if shared not configured.
+          return {
+            ok: false,
+            error: data.error || "Could not save signature.",
+          };
         } catch {
-          // network — fall back to local
+          return {
+            ok: false,
+            error: "Could not reach Pulse. Try again — this was not counted.",
+          };
         }
-
-        const sig: Signature = {
-          id: id("sig"),
-          petitionId: input.petitionId,
-          name: input.name.trim(),
-          email,
-          city: input.city.trim(),
-          state: input.state.trim() || "GA",
-          zip: input.zip?.trim(),
-          intensity: input.intensity,
-          why: input.why?.trim() || undefined,
-          signedAt: new Date().toISOString(),
-          verificationLevel: input.zip?.trim() ? 2 : 1,
-        };
-        set((s) => ({
-          signatures: [sig, ...s.signatures],
-          persistence: s.persistence === "lpl" ? "lpl" : "local",
-          me: s.me ?? {
-            name: sig.name,
-            email: sig.email,
-            city: sig.city,
-            state: sig.state,
-            zip: sig.zip,
-            isLeader: false,
-          },
-        }));
-        return { ok: true };
       },
       createPetition: async (input) => {
         const base = slugify(input.title) || "signal";
@@ -244,33 +217,16 @@ export const usePulseStore = create<PulseStore>()(
             }));
             return { ok: true, petition };
           }
-          if (data.error && !data.error.includes("not configured")) {
-            return { ok: false, error: data.error };
-          }
+          return {
+            ok: false,
+            error: data.error || "Could not publish this signal.",
+          };
         } catch {
-          // local fallback
+          return {
+            ok: false,
+            error: "Could not reach Pulse. Try again — this was not published.",
+          };
         }
-
-        const petition: Petition = {
-          id: id("pet"),
-          slug,
-          title: input.title.trim(),
-          summary: input.summary.trim(),
-          body: input.body.trim(),
-          ask: input.ask.trim(),
-          category: input.category.trim() || "General",
-          featured: false,
-          status: "open",
-          leaderId: input.leaderId,
-          createdAt: new Date().toISOString(),
-          createdByName: input.createdByName.trim() || "Neighbor",
-          hostedNotEndorsed: true,
-          whyThisSeat: input.whyThisSeat,
-          localeLabel: input.localeLabel,
-          parentId: input.parentId,
-        };
-        set((s) => ({ petitions: [petition, ...s.petitions] }));
-        return { ok: true, petition };
       },
       respondAsLeader: async (input) => {
         const petition = get().petitions.find((p) => p.id === input.petitionId);
@@ -307,29 +263,16 @@ export const usePulseStore = create<PulseStore>()(
             }));
             return { ok: true };
           }
-          if (data.error && !data.error.includes("not configured")) {
-            return { ok: false, error: data.error };
-          }
+          return {
+            ok: false,
+            error: data.error || "Could not post this response.",
+          };
         } catch {
-          // local
+          return {
+            ok: false,
+            error: "Could not reach Pulse. Try again — this was not posted.",
+          };
         }
-
-        const response: LeaderResponse = {
-          id: id("resp"),
-          petitionId: input.petitionId,
-          leaderId: input.leaderId,
-          message: input.message.trim(),
-          createdAt: new Date().toISOString(),
-        };
-        set((s) => ({
-          responses: [response, ...s.responses],
-          petitions: s.petitions.map((p) =>
-            p.id === input.petitionId
-              ? { ...p, status: "responded" as const }
-              : p,
-          ),
-        }));
-        return { ok: true };
       },
       signatureCount: (petitionId) =>
         get().signatures.filter((s) => s.petitionId === petitionId).length,
@@ -376,6 +319,7 @@ export const usePulseStore = create<PulseStore>()(
           me: p.me ?? null,
           persistence: "unknown",
           sharedReady: false,
+          hydrateError: null,
         };
       },
       partialize: (s) => ({
@@ -403,13 +347,14 @@ export async function syncSharedPulse() {
     const data = (await stateRes.json()) as {
       ok?: boolean;
       persistence?: PersistenceMode;
+      error?: string;
       leaders?: Leader[];
       petitions?: Petition[];
       signatures?: Signature[];
       responses?: LeaderResponse[];
       notices?: LeaderNotice[];
     };
-    if (data.persistence === "lpl" && data.signatures) {
+    if (data.ok && data.persistence === "lpl" && Array.isArray(data.signatures)) {
       usePulseStore.getState().applyShared({
         leaders: data.leaders ?? SEED_LEADERS,
         petitions: data.petitions ?? SEED_PETITIONS,
@@ -422,6 +367,9 @@ export async function syncSharedPulse() {
       usePulseStore.setState({
         sharedReady: true,
         persistence: "local",
+        hydrateError:
+          data.error ||
+          "Could not load shared Pulse data. Signature counts may be incomplete.",
       });
     }
     try {
@@ -431,6 +379,11 @@ export async function syncSharedPulse() {
       // no session
     }
   } catch {
-    usePulseStore.setState({ sharedReady: true, persistence: "local" });
+    usePulseStore.setState({
+      sharedReady: true,
+      persistence: "local",
+      hydrateError:
+        "Could not reach Pulse. Signature counts may be incomplete — retry in a moment.",
+    });
   }
 }
