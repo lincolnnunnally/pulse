@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api
+Disallow: /account
+Disallow: /admin
+Disallow: /me
+
+Sitemap: https://pulse.unitedundergod.org/sitemap.xml
