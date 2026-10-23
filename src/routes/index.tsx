@@ -4,8 +4,33 @@ import { HostingNotice } from "@/components/pulse/hosting-notice";
 import { PetitionCard } from "@/components/pulse/petition-card";
 import { usePulseStore } from "@/lib/pulse/store";
 import { formatCount } from "@/lib/utils";
+import { appJsonLd, pageHead } from "@/lib/seo";
+
+const HOME_DESCRIPTION =
+  "Pulse turns petitions into two-way signals: a clear ask to the leader who can decide, how much it matters to each signer, and a place for leaders to reply.";
 
 export const Route = createFileRoute("/")({
+  head: () =>
+    pageHead({
+      path: "/",
+      title: "Pulse: Petitions Leaders Can Read and Answer",
+      description: HOME_DESCRIPTION,
+      jsonLd: [
+        appJsonLd({
+          path: "/",
+          name: "Pulse",
+          description: HOME_DESCRIPTION,
+          featureList: [
+            "Start a petition addressed to the leader who can decide",
+            "Sign with how much it matters (1 to 5)",
+            "Signature counts labeled by verification level",
+            "Formal notice packet for the decision-maker",
+            "Fork a campaign for your area",
+            "Leader inbox with public responses",
+          ],
+        }),
+      ],
+    }),
   component: HomePage,
 });
 

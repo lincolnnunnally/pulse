@@ -21,6 +21,9 @@ export function SiteFooter() {
           <Link to="/leaders" className="text-fg-muted no-underline hover:text-fg">
             Leader inbox
           </Link>
+          <Link to="/how-it-works" className="text-fg-muted no-underline hover:text-fg">
+            How it works
+          </Link>
           <Link to="/about" className="text-fg-muted no-underline hover:text-fg">
             About
           </Link>

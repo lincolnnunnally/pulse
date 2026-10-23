@@ -17,11 +17,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { clip, pageHead } from "@/lib/seo";
 import { usePulseStore } from "@/lib/pulse/store";
 import type { Intensity, Petition } from "@/lib/pulse/types";
 import { formatCount, formatDate } from "@/lib/utils";
 
 export const Route = createFileRoute("/p/$slug")({
+  // Public signals are already indexable; give each its own title and
+  // canonical. On the server the store holds the seeded signals; in the
+  // browser it holds the live list.
+  head: ({ params }) => {
+    const petition = usePulseStore
+      .getState()
+      .petitions.find((p) => p.slug === params.slug);
+    if (!petition) return { meta: [{ title: "Signal | Pulse" }] };
+    return pageHead({
+      path: `/p/${petition.slug}`,
+      title: `${clip(petition.title, 60)} | Pulse`,
+      description: clip(petition.summary, 158),
+    });
+  },
   component: PetitionDetailPage,
 });
 

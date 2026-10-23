@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { usePulseStore } from "@/lib/pulse/store";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/create")({
+  head: () =>
+    pageHead({
+      path: "/create",
+      title: "Start a Petition to Your Local Leaders | Pulse",
+      description:
+        "Write a clear ask, pick the lawmaker, school board, HOA or other seat that can decide, say why that seat, and publish a signal neighbors can sign.",
+    }),
   component: CreatePage,
 });
 

@@ -11,8 +11,11 @@ import {
 } from "@/lib/pulse/admin-stats";
 import { usePulseStore } from "@/lib/pulse/store";
 import type { PulsePerson } from "@/lib/pulse/types";
+import { privateHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/admin")({
+  head: () =>
+    privateHead("Admin | Pulse"),
   component: AdminPage,
 });
 

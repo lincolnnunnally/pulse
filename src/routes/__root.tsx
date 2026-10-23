@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PulseHydrate } from "@/components/pulse/pulse-hydrate";
+import { ldJson, organizationJsonLd, SITE_NAME, websiteJsonLd } from "@/lib/seo";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -18,6 +19,9 @@ export const Route = createRootRoute({
         content:
           "Modern petitioning that carries meaning to leaders and responses back to people. Featured: Georgia food-to-farms (not garbage) and a fairer consumption-tax study.",
       },
+      { property: "og:site_name", content: SITE_NAME },
+      ldJson(organizationJsonLd),
+      ldJson(websiteJsonLd),
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
