@@ -6,8 +6,16 @@ import { PetitionCard } from "@/components/pulse/petition-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePulseStore } from "@/lib/pulse/store";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/petitions")({
+  head: () =>
+    pageHead({
+      path: "/petitions",
+      title: "Browse Petitions and Local Asks to Leaders | Pulse",
+      description:
+        "Search open petitions by title, ask, place or leader. Filter by category or leader response, see who can act, and fork a campaign for your own area.",
+    }),
   component: PetitionsPage,
 });
 

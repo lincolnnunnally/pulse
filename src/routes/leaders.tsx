@@ -9,8 +9,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePulseStore } from "@/lib/pulse/store";
 import type { PulsePerson } from "@/lib/pulse/types";
 import { formatCount, formatDate } from "@/lib/utils";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/leaders")({
+  head: () =>
+    pageHead({
+      path: "/leaders",
+      title: "Leader Inbox: Hear and Answer Your People | Pulse",
+      description:
+        "For elected officials, school boards, pastors, HOAs and employers: claim your seat, see support labeled by verification level, and respond in public.",
+    }),
   component: LeadersPage,
 });
 

@@ -8,8 +8,11 @@ import { Label } from "@/components/ui/label";
 import { usePulseStore } from "@/lib/pulse/store";
 import type { PulsePerson } from "@/lib/pulse/types";
 import { LEVEL_LABELS, verificationBadge } from "@/lib/pulse/verify";
+import { privateHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/account")({
+  head: () =>
+    privateHead("Account | Pulse"),
   component: AccountPage,
 });
 

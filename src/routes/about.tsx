@@ -1,7 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { HostingNotice } from "@/components/pulse/hosting-notice";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/about")({
+  head: () =>
+    pageHead({
+      path: "/about",
+      title: "About Pulse: Alignment Between People and Leaders",
+      description:
+        "Pulse modernizes petitioning: carry a clear ask up, show how much it matters and where, and let leaders respond so people know they were heard.",
+    }),
   component: AboutPage,
 });
 
@@ -21,6 +29,14 @@ function AboutPage() {
         leads a body of people — representatives, school boards, pastors, HOAs,
         employers, nonprofit boards — and needs a trustworthy signal from that
         body.
+      </p>
+      <p className="text-sm leading-relaxed text-fg-muted">
+        See{" "}
+        <Link to="/how-it-works" className="font-medium text-accent">
+          how Pulse works
+        </Link>{" "}
+        for each step: starting a signal, signing, notifying the leader,
+        forking for your area, and leader responses.
       </p>
       <HostingNotice />
       <p className="text-sm text-fg-muted">

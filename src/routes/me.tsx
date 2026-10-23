@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { usePulseStore } from "@/lib/pulse/store";
 import { formatDate } from "@/lib/utils";
+import { privateHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/me")({
+  head: () =>
+    privateHead("My pulse | Pulse"),
   component: MePage,
 });
 

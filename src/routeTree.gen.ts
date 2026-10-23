@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LeadersRouteImport } from './routes/leaders'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as PetitionsRouteImport } from './routes/petitions'
@@ -53,6 +54,11 @@ const AdminRoute = AdminRouteImport.update({
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeadersRoute = LeadersRouteImport.update({
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/create': typeof CreateRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/create': typeof CreateRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/create': typeof CreateRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/leaders': typeof LeadersRoute
   '/me': typeof MeRoute
   '/petitions': typeof PetitionsRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/create'
+    | '/how-it-works'
     | '/leaders'
     | '/me'
     | '/petitions'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/create'
+    | '/how-it-works'
     | '/leaders'
     | '/me'
     | '/petitions'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/create'
+    | '/how-it-works'
     | '/leaders'
     | '/me'
     | '/petitions'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   CreateRoute: typeof CreateRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   LeadersRoute: typeof LeadersRoute
   MeRoute: typeof MeRoute
   PetitionsRoute: typeof PetitionsRoute
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaders': {
@@ -441,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   CreateRoute: CreateRoute,
+  HowItWorksRoute: HowItWorksRoute,
   LeadersRoute: LeadersRoute,
   MeRoute: MeRoute,
   PetitionsRoute: PetitionsRoute,
@@ -460,3 +481,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
